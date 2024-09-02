@@ -28,6 +28,13 @@
     <script>
         let parsedData = [];
 
+        const columns = 
+            ['등수', '종합점수', 'LEET 백분위점수', '공인영어 점수', 
+            '공인영어 종류', 'GPA', '서류', 
+            '출신대학', '자교/타교',  '자교/타교 등수', 
+            '전공계열', '법학/비법학', '법학/비법학 등수', 
+            '나이', '타군 지원 대학', '타군 지원 전형'];
+
         function parseScore(scoreText) {
             const match = scoreText.match(/(\d+(?:\.\d+)?)/);
             return match ? parseFloat(match[1]) : '';
@@ -121,7 +128,7 @@
             });
 
             const csv = Papa.unparse({
-                fields: ['등수', '종합점수', 'LEET 백분위점수', '공인영어 점수', '공인영어 종류', 'GPA', '서류', '출신대학', '자교/타교', '출신대학 등수', '전공', '법학/비법학', '전공 등수', '나이', '타군 지원 대학', '타군 지원 전형'],
+                fields: columns,
                 data: parsedData
             });
 
@@ -156,14 +163,7 @@
                 return;
             }
 
-            const ws = XLSX.utils.aoa_to_sheet([
-                ['등수', '종합점수', 'LEET 백분위점수', '공인영어 점수', 
-                '공인영어 종류', 'GPA', '서류', 
-                '출신대학', '자교/타교',  '자교/타교 등수', 
-                '전공계열', '법학/비법학', '법학/비법학 등수', 
-                '나이', '타군 지원 대학', '타군 지원 전형'],
-                ...parsedData
-            ]);
+            const ws = XLSX.utils.aoa_to_sheet([columns, ...parsedData]);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
             

@@ -28,12 +28,11 @@
     <script>
         let parsedData = [];
 
-        const columns = 
-            ['등수', '종합점수', 'LEET 백분위점수', '공인영어 점수', 
-            '공인영어 종류', 'GPA', '서류', 
-            '출신대학', '자교/타교',  '자교/타교 등수', 
-            '전공계열', '법학/비법학', '법학/비법학 등수', 
-            '나이', '타군 지원 대학', '타군 지원 전형'];
+        const columns = [
+            '순위', '종합점수', 'LEET', 'GPA', '학부', '자교 순위', '타교 순위', 
+            '전공', '나이', '타군(대학)', '타군(일반/특별)', '어학점수', '(시험)종류',
+            '봉사', '수상', '경력', '자격증', '논문'
+        ];
 
         function parseScore(scoreText) {
             const match = scoreText.match(/(\d+(?:\.\d+)?)/);
@@ -55,74 +54,70 @@
             parsedData = [];
 
             rows.forEach(row => {
-                const rowData = [];
                 const cells = row.querySelectorAll('th, td');
+                const rowData = [];
                 
-                // 등수
+                // 순위
                 rowData.push(cells[0].textContent.trim());
                 
                 // 종합점수
                 rowData.push(parseScore(cells[1].textContent));
                 
-                // LEET 백분위점수
+                // LEET
                 rowData.push(parseScore(cells[2].textContent));
-                
-                // 공인영어 점수와 종류
-                const englishScoreText = cells[3].textContent.trim();
-                const englishMatch = englishScoreText.match(/(\d+\.?\d*)점\s*\(\s*(.*?)\s*\)/);
-                if (englishMatch) {
-                    rowData.push(parseFloat(englishMatch[1])); // 점수
-                    rowData.push(englishMatch[2]); // 종류
-                } else {
-                    rowData.push('');
-                    rowData.push('');
-                }
                 
                 // GPA
                 rowData.push(parseScore(cells[4].textContent));
                 
-                // 서류
-                rowData.push(cells[5].textContent.trim().replace(/\s+/g, ' '));
-                
-                // 출신대학, 자교/타교, 출신대학 등수
+                // 학부 (출신대학)
                 const univText = cells[6].textContent.trim();
                 const univMatch = univText.match(/(.*?)\s*\(\s*(자교|타교)(\d+)등\s*\)/);
-                if (univMatch) {
-                    rowData.push(univMatch[1]); // 출신대학
-                    rowData.push(univMatch[2]); // 자교/타교
-                    rowData.push(univMatch[3]); // 출신대학 등수
-                } else {
-                    rowData.push(univText);
-                    rowData.push('');
-                    rowData.push('');
-                }
+                rowData.push(univMatch ? univMatch[1] : univText);
                 
-                // 전공, 법학/비법학, 전공 등수
+                // 자교 순위
+                rowData.push(univMatch && univMatch[2] === '자교' ? univMatch[3] : '');
+                
+                // 타교 순위
+                rowData.push(univMatch && univMatch[2] === '타교' ? univMatch[3] : '');
+                
+                // 전공
                 const majorText = cells[7].textContent.trim();
                 const majorMatch = majorText.match(/(.*?)\s*\(\s*(법학|비법학)(\d+)등\s*\)/);
-                if (majorMatch) {
-                    rowData.push(majorMatch[1]); // 전공
-                    rowData.push(majorMatch[2]); // 법학/비법학
-                    rowData.push(majorMatch[3]); // 전공 등수
-                } else {
-                    rowData.push(majorText);
-                    rowData.push('');
-                    rowData.push('');
-                }
+                rowData.push(majorMatch ? majorMatch[1] : majorText);
                 
                 // 나이
                 rowData.push(cells[8].textContent.trim());
                 
-                // 타군 지원 대학과 전형
+                // 타군(대학)과 타군(일반/특별)
                 const otherAppText = cells[9].textContent.trim();
                 const otherAppMatch = otherAppText.match(/(.*?)\s*\(\s*(.*?)\s*\)/);
-                if (otherAppMatch) {
-                    rowData.push(otherAppMatch[1]); // 타군 지원 대학
-                    rowData.push(otherAppMatch[2]); // 타군 지원 전형
-                } else {
-                    rowData.push(otherAppText);
-                    rowData.push('');
-                }
+                rowData.push(otherAppMatch ? otherAppMatch[1] : ''); // 타군(대학)
+                rowData.push(otherAppMatch ? otherAppMatch[2] : ''); // 타군(일반/특별)
+                
+                // 어학점수와 (시험)종류
+                const englishScoreText = cells[3].textContent.trim();
+                const englishMatch = englishScoreText.match(/(\d+\.?\d*)점\s*\(\s*(.*?)\s*\)/);
+                rowData.push(englishMatch ? parseFloat(englishMatch[1]) : ''); // 어학점수
+                rowData.push(englishMatch ? englishMatch[2] : ''); // (시험)종류
+                
+                // 서류 정보 파싱 (봉사, 수상, 경력, 자격증, 논문)
+                const paperworkText = cells[5].textContent.trim();
+                const paperworkItems = paperworkText.split('\n').map(item => item.trim());
+                const paperworkData = {
+                    '봉사': '', '수상경력': '', '경력': '', '기타자격증': '', '대학원 논문': ''
+                };
+                paperworkItems.forEach(item => {
+                    const [key, value] = item.split('] ');
+                    if (key && value) {
+                        paperworkData[key.slice(1)] = value;
+                    }
+                });
+                
+                rowData.push(paperworkData['봉사']);
+                rowData.push(paperworkData['수상경력']);
+                rowData.push(paperworkData['경력']);
+                rowData.push(paperworkData['기타자격증']);
+                rowData.push(paperworkData['대학원 논문']);
                 
                 parsedData.push(rowData);
             });

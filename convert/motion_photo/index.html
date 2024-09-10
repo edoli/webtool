@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Motion Photo Extractor</title>
+    <title>Motion Photo Extractor</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         h1 { color: #333; }
@@ -47,7 +47,7 @@
     </style>
 </head>
 <body>
-    <h1>Google Motion Photo Extractor</h1>
+    <h1>Motion Photo Extractor</h1>
     <div>
         <input type="checkbox" id="autoDownload">
         <label for="autoDownload">Automatically download converted files</label>
@@ -178,7 +178,8 @@
 
         function buffertoblob(arrayBuffer) {
             var array = new Uint8Array(arrayBuffer), start;
-            for (var i = 0; i < array.length; i++) {
+            // skip first 8 bytes to avoid duplicated magic number
+            for (var i = 8; i < array.length; i++) {
                 if (array[i+4] == 0x66 && array[i+5] == 0x74 && array[i+6] == 0x79 && array[i+7] == 0x70) {
                     start = i;
                     break;

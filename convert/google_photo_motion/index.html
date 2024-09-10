@@ -7,12 +7,43 @@
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         h1 { color: #333; }
-        #dropArea { border: 2px dashed #ccc; border-radius: 20px; width: 100%; margin: 20px 0; padding: 20px; text-align: center; }
+        #dropArea { border: 2px dashed #ccc; border-radius: 20px; width: 100%; margin: 20px 0; padding: 20px; text-align: center; cursor: pointer; box-sizing: border-box; }
         #dropArea.highlight { border-color: purple; }
+        #dropArea:hover { background: #eee; }
         #fileElem { display: none; }
-        .preview { max-width: 100%; margin-top: 20px; }
-        #status { margin-top: 20px; }
-        .file-item { margin-bottom: 10px; }
+        #status { margin: 20px 0; padding: 10px; background: #eef; width: 100%; box-sizing: border-box; }
+        .file-item { 
+            display: flex; 
+            margin-bottom: 20px; 
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .file-info {
+            flex: 1;
+            padding-right: 20px;
+        }
+        .file-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .download-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+        }
+        .video-container {
+            flex: 1;
+        }
+        .preview {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
     </style>
 </head>
 <body>
@@ -85,23 +116,35 @@
                 let arrayBuffer = e.target.result;
                 let blob = buffertoblob(arrayBuffer);
                 if (blob) {
+                    let fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+
+                    let fileInfo = document.createElement('div');
+                    fileInfo.className = 'file-info';
+
+                    let fileName = document.createElement('div');
+                    fileName.className = 'file-name';
+                    fileName.textContent = `File ${index + 1}: ${file.name}`;
+                    fileInfo.appendChild(fileName);
+
+                    let downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(blob);
+                    downloadLink.download = file.name.replace(/\.[^/.]+$/, "") + '.mp4';
+                    downloadLink.textContent = 'Download MP4';
+                    downloadLink.className = 'download-link';
+                    fileInfo.appendChild(downloadLink);
+
+                    let videoContainer = document.createElement('div');
+                    videoContainer.className = 'video-container';
+
                     let videoElement = document.createElement('video');
                     videoElement.src = URL.createObjectURL(blob);
                     videoElement.controls = true;
                     videoElement.className = 'preview';
+                    videoContainer.appendChild(videoElement);
 
-                    let downloadLink = document.createElement('a');
-                    downloadLink.href = videoElement.src;
-                    downloadLink.download = file.name.replace(/\.[^/.]+$/, "") + '.mp4';
-                    downloadLink.textContent = 'Download MP4';
-
-                    let fileItem = document.createElement('div');
-                    fileItem.className = 'file-item';
-                    fileItem.appendChild(document.createTextNode(`File ${index + 1}: ${file.name}`));
-                    fileItem.appendChild(document.createElement('br'));
-                    fileItem.appendChild(videoElement);
-                    fileItem.appendChild(document.createElement('br'));
-                    fileItem.appendChild(downloadLink);
+                    fileItem.appendChild(fileInfo);
+                    fileItem.appendChild(videoContainer);
 
                     previewArea.appendChild(fileItem);
 

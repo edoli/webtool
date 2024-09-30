@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motion Photo Extractor</title>
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
     <h1>Motion Photo Extractor</h1>
@@ -91,7 +91,7 @@
                     downloadLink.href = URL.createObjectURL(blob);
                     downloadLink.download = file.name.replace(/\.[^/.]+$/, "") + '.mp4';
                     downloadLink.textContent = 'Download MP4';
-                    downloadLink.className = 'download-link';
+                    downloadLink.className = 'button';
                     fileInfo.appendChild(downloadLink);
 
                     let videoContainer = document.createElement('div');

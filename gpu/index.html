@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU vs GPU.js Benchmark</title>
+    <script src="https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9e9e9;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebGPU vs GPU.js Benchmark</h1>
+        <p>This page runs a benchmark comparing matrix multiplication performance between WebGPU and GPU.js.</p>
+        <button onclick="runBenchmark()">Run Benchmark</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 행렬 크기 설정
+        const MATRIX_SIZE = 1024;
+
+        // 헬퍼 함수: 랜덤 행렬 생성
+        function createRandomMatrix(size) {
+            return Array.from({ length: size }, () =>
+                Array.from({ length: size }, () => Math.random())
+            );
+        }
+
+        // WebGPU 구현
+        async function runWebGPU(matrixA, matrixB) {
+            if (!navigator.gpu) {
+                throw new Error("WebGPU is not supported on this browser.");
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter) {
+                throw new Error("No appropriate GPUAdapter found.");
+            }
+            const device = await adapter.requestDevice();
+
+            const matrixABuffer = device.createBuffer({
+                size: MATRIX_SIZE * MATRIX_SIZE * 4,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            });
+
+            const matrixBBuffer = device.createBuffer({
+                size: MATRIX_SIZE * MATRIX_SIZE * 4,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            });
+
+            const computeResultBuffer = device.createBuffer({
+                size: MATRIX_SIZE * MATRIX_SIZE * 4,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+            });
+
+            const readResultBuffer = device.createBuffer({
+                size: MATRIX_SIZE * MATRIX_SIZE * 4,
+                usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+            });
+
+            device.queue.writeBuffer(
+                matrixABuffer,
+                0,
+                new Float32Array(matrixA.flat())
+            );
+            device.queue.writeBuffer(
+                matrixBBuffer,
+                0,
+                new Float32Array(matrixB.flat())
+            );
+
+            const shaderModule = device.createShaderModule({
+                code: `
+                    @group(0) @binding(0) var<storage, read> matrixA : array<f32>;
+                    @group(0) @binding(1) var<storage, read> matrixB : array<f32>;
+                    @group(0) @binding(2) var<storage, read_write> result : array<f32>;
+
+                    @compute @workgroup_size(8, 8)
+                    fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
+                        let row = global_id.x;
+                        let col = global_id.y;
+                        var sum = 0.0;
+                        for (var i = 0u; i < ${MATRIX_SIZE}u; i = i + 1u) {
+                            sum = sum + matrixA[row * ${MATRIX_SIZE}u + i] * matrixB[i * ${MATRIX_SIZE}u + col];
+                        }
+                        result[row * ${MATRIX_SIZE}u + col] = sum;
+                    }
+                `,
+            });
+
+            const bindGroupLayout = device.createBindGroupLayout({
+                entries: [
+                    { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+                    { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+                    { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+                ],
+            });
+
+            const bindGroup = device.createBindGroup({
+                layout: bindGroupLayout,
+                entries: [
+                    { binding: 0, resource: { buffer: matrixABuffer } },
+                    { binding: 1, resource: { buffer: matrixBBuffer } },
+                    { binding: 2, resource: { buffer: computeResultBuffer } },
+                ],
+            });
+
+            const pipelineLayout = device.createPipelineLayout({
+                bindGroupLayouts: [bindGroupLayout],
+            });
+
+            const computePipeline = device.createComputePipeline({
+                layout: pipelineLayout,
+                compute: {
+                    module: shaderModule,
+                    entryPoint: "main",
+                },
+            });
+
+            const commandEncoder = device.createCommandEncoder();
+            const passEncoder = commandEncoder.beginComputePass();
+            passEncoder.setPipeline(computePipeline);
+            passEncoder.setBindGroup(0, bindGroup);
+            passEncoder.dispatchWorkgroups(MATRIX_SIZE / 8, MATRIX_SIZE / 8);
+            passEncoder.end();
+
+            commandEncoder.copyBufferToBuffer(
+                computeResultBuffer, 0,
+                readResultBuffer, 0,
+                MATRIX_SIZE * MATRIX_SIZE * 4
+            );
+
+            device.queue.submit([commandEncoder.finish()]);
+            await device.queue.onSubmittedWorkDone();
+
+            // 이제 readResultBuffer에서 결과를 읽을 수 있습니다
+            await readResultBuffer.mapAsync(GPUMapMode.READ);
+            const resultBufferArray = new Float32Array(readResultBuffer.getMappedRange());
+            const output = resultBufferArray.slice();
+            readResultBuffer.unmap();
+
+            return output;
+        }
+
+        // GPU.js 구현
+        function runGPUjs(matrixA, matrixB) {
+            const gpu = new GPU.GPU();
+            const multiplyMatrix = gpu.createKernel(function(a, b) {
+                let sum = 0;
+                for (let i = 0; i < this.constants.size; i++) {
+                    sum += a[this.thread.y][i] * b[i][this.thread.x];
+                }
+                return sum;
+            }).setConstants({ size: MATRIX_SIZE })
+                .setOutput([MATRIX_SIZE, MATRIX_SIZE]);
+
+            return multiplyMatrix(matrixA, matrixB);
+        }
+
+        // CPU 구현
+        function runCPU(matrixA, matrixB) {
+            const result = new Array(MATRIX_SIZE).fill(0).map(() => new Array(MATRIX_SIZE).fill(0));
+
+            for (let i = 0; i < MATRIX_SIZE; i++) {
+                for (let j = 0; j < MATRIX_SIZE; j++) {
+                    for (let k = 0; k < MATRIX_SIZE; k++) {
+                        result[i][j] += matrixA[i][k] * matrixB[k][j];
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // 벤치마크 실행 함수
+        async function runBenchmark() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = "벤치마크 실행 중...";
+
+            const matrixA = createRandomMatrix(MATRIX_SIZE);
+            const matrixB = createRandomMatrix(MATRIX_SIZE);
+
+            let webgpuResult, webgpuTime, gpujsResult, gpujsTime;
+
+            try {
+                console.log("Starting WebGPU benchmark...");
+                // warm up
+                webgpuResult = await runWebGPU(matrixA, matrixB);
+                const webgpuStart = performance.now();
+                webgpuResult = await runWebGPU(matrixA, matrixB);
+                const webgpuEnd = performance.now();
+                webgpuTime = webgpuEnd - webgpuStart;
+                console.log(`WebGPU time: ${webgpuTime} ms`);
+            } catch (error) {
+                console.error("WebGPU 벤치마크 실행 중 오류 발생:", error);
+            }
+
+            try {
+                console.log("Starting GPU.js benchmark...");
+                // warm up
+                gpujsResult = runGPUjs(matrixA, matrixB);
+                const gpujsStart = performance.now();
+                gpujsResult = runGPUjs(matrixA, matrixB);
+                const gpujsEnd = performance.now();
+                gpujsTime = gpujsEnd - gpujsStart;
+                console.log(`GPU.js time: ${gpujsTime} ms`);
+            } catch (error) {
+                console.error("GPU.js 벤치마크 실행 중 오류 발생:", error);
+            }
+
+            try {
+                console.log("Starting CPU benchmark...");
+                const cpuStart = performance.now();
+                cpuResult = runCPU(matrixA, matrixB);
+                const cpuEnd = performance.now();
+                cpuTime = cpuEnd - cpuStart;
+                console.log(`CPU time: ${cpuTime} ms`);
+            } catch (error) {
+                console.error("CPU 벤치마크 실행 중 오류 발생:", error);
+            }
+
+            let resultHTML = "<h2>벤치마크 결과</h2>";
+
+            if (webgpuResult) {
+                resultHTML += `<p>WebGPU 실행 시간: ${webgpuTime.toFixed(2)} ms</p>`;
+                resultHTML += `<p>WebGPU 결과 (첫 번째 요소): ${webgpuResult[0]}</p>`;
+                resultHTML += `<p>WebGPU 결과 ([3][2] 요소): ${webgpuResult[3 * MATRIX_SIZE + 2]}</p>`;
+            } else {
+                resultHTML += "<p>WebGPU 벤치마크 실행 실패</p>";
+            }
+
+            if (gpujsResult) {
+                resultHTML += `<p>GPU.js 실행 시간: ${gpujsTime.toFixed(2)} ms</p>`;
+                resultHTML += `<p>GPU.js 결과 (첫 번째 요소): ${gpujsResult[0][0]}</p>`;
+                resultHTML += `<p>GPU.js 결과 ([3][2] 요소): ${gpujsResult[3][2]}</p>`;
+            } else {
+                resultHTML += "<p>GPU.js 벤치마크 실행 실패</p>";
+            }
+
+            if (cpuResult) {
+                resultHTML += `<p>CPU 실행 시간: ${cpuTime.toFixed(2)} ms</p>`;
+                resultHTML += `<p>CPU 결과 (첫 번째 요소): ${cpuResult[0][0]}</p>`;
+                resultHTML += `<p>CPU 결과 ([3][2] 요소): ${cpuResult[3][2]}</p>`;
+            } else {
+                resultHTML += "<p>CPU 벤치마크 실행 실패</p>";
+            }
+
+            resultDiv.innerHTML = resultHTML;
+        }
+    </script>
+</body>
+</html>

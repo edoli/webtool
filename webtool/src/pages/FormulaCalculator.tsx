@@ -1,36 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import BasePage from './BasePage';
 
 interface Variables {
   [key: string]: string;
 }
 
 // Math 함수들을 전역 스코프에 매핑
-const mathFunctions = {
-  sin: Math.sin,
-  cos: Math.cos,
-  tan: Math.tan,
-  asin: Math.asin,
-  acos: Math.acos,
-  atan: Math.atan,
-  sinh: Math.sinh,
-  cosh: Math.cosh,
-  tanh: Math.tanh,
-  abs: Math.abs,
-  sqrt: Math.sqrt,
-  exp: Math.exp,
-  log: Math.log,
-  log10: Math.log10,
-  pow: Math.pow,
-  round: Math.round,
-  floor: Math.floor,
-  ceil: Math.ceil,
-  PI: Math.PI,
-  E: Math.E
+const mathFunctions: { [key: string]: any } = {
+  rad: (deg: number) => deg * Math.PI / 180.0,
+  deg: (rad: number) => rad * 180 / Math.PI,
 };
 
+// Get all functions in Math
+const mathFunctionNames = Object.getOwnPropertyNames(Math);
+
+mathFunctionNames.forEach((name: string) => {
+  const value = (Math as any)[name];
+  mathFunctions[name] = value;
+});
+
+
+
+
 const FormulaCalculator = () => {
+  BasePage({ title: "Formula Calculator" });
+
   const [formulaTemplate, setFormulaTemplate] = useState('sin(x) + cos(y)');
   const [variables, setVariables] = useState<Variables>({});
 
@@ -55,7 +51,6 @@ const FormulaCalculator = () => {
 
   const calculateResult = () => {
     try {
-      // Math 함수들을 전역 스코프에 추가
       const context = {
         ...mathFunctions,
         ...Object.fromEntries(
@@ -63,20 +58,14 @@ const FormulaCalculator = () => {
         )
       };
 
-      // Function 생성자를 사용하여 동적으로 함수 생성
-      const formula = formulaTemplate
-        .replace(/([a-zA-Z_][a-zA-Z0-9_]*)/g, (match) => {
-          return context[match] !== undefined ? String(context[match]) : match;
-        });
+      const formula = formulaTemplate;
 
-      // 수식 계산을 위한 함수 생성
       const calculate = new Function(...Object.keys(context), `return ${formula}`);
       
       // 계산 실행
       const result = calculate(...Object.values(context));
       return typeof result === 'number' ? result.toFixed(4) : result;
     } catch (error) {
-      console.error('Error calculating formula:', error);
       return 'Error: ' + (error instanceof Error ? error.message : String(error));
     }
   };
@@ -111,16 +100,14 @@ const FormulaCalculator = () => {
             {Object.entries(variables).sort().map(([name, value]) => (
               <div key={name} className="space-y-2">
                 <div className="flex justify-between">
-                  <label className="text-sm font-medium">
-                    {name} = {value}
-                  </label>
+                  <span className='pr-4 leading-9 text-lg'>{name} :</span>
+                  <Input
+                    type="number"
+                    value={value}
+                    onChange={(e) => handleVariableChange(name, e.target.value)}
+                    className="w-auto flex-1"
+                  />
                 </div>
-                <Input
-                  type="number"
-                  value={value}
-                  onChange={(e) => handleVariableChange(name, e.target.value)}
-                  className="w-full"
-                />
               </div>
             ))}
           </div>

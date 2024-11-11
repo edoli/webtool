@@ -1,10 +1,20 @@
 import './App.css'
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
 import FormulaCalculator from './pages/FormulaCalculator'
 
-function App() {
 
+const router = createBrowserRouter([
+  { path: "/FormulaCalculator", element: <FormulaCalculator /> }
+]);
+
+function App() {
   return (
-    <FormulaCalculator></FormulaCalculator>
+    <>
+      <RouterProvider router={router} />
+    </>
   )
 }
 

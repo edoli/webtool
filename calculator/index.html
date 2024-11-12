@@ -197,10 +197,33 @@
             updateDisplay();
         }
 
+        // 상태를 URL에 저장하는 함수
+        function saveStateToURL() {
+            const encodedFormula = encodeURIComponent(formulaTemplate);
+            const encodedVariables = encodeURIComponent(btoa(JSON.stringify(variables)));
+            const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}`;
+            history.replaceState(null, '', url);
+        }
+
+        // URL에서 상태를 불러오는 함수
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const formulaParam = params.get('f');
+            const variablesParam = params.get('v');
+
+            if (formulaParam) {
+                formulaTemplate = decodeURIComponent(formulaParam);
+            }
+            if (variablesParam) {
+                Object.assign(variables, JSON.parse(atob(decodeURIComponent(variablesParam))));
+            }
+        }
+
         // 화면 업데이트
         function updateDisplay() {
             formulaDisplay.textContent = formulaTemplate;
             resultDisplay.textContent = calculateResult();
+            saveStateToURL();
         }
 
         // 이벤트 리스너
@@ -218,6 +241,7 @@
         });
 
         // 초기화
+        loadStateFromURL();
         formulaInput.value = formulaTemplate;
         updateVariableInputs();
     </script>

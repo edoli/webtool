@@ -3,7 +3,7 @@
   --primary-color: #3498db;
   --secondary-color: #2d9e31;
   --text-color: #333;
-  --background-color: #fff;
+  --background-color: #f0f0f0;
   --hover-color: #eee;
   --border-color: #ccc;
   --border-radius: 5px;
@@ -34,7 +34,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   color: #2c3e50;
-  border-bottom: 2px solid var(--secondary-color);
+  border-bottom: 2px solid var(--border-color);
   padding-bottom: 4px;
 }
 
@@ -64,6 +64,11 @@ ul {
 .flex-column {
   display: flex;
   flex-direction: column;
+}
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .flex-1 {
   flex: 1;

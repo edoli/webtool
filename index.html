@@ -6,27 +6,90 @@
     <title>Edoli Web Tools</title>
     <link rel="stylesheet" href="./style.css">
     <style>
+
+        .title {
+            font-size: 64px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            position: relative;
+            margin-bottom: 0.5em;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.8s ease forwards;
+        }
+
+        .accent {
+            color: transparent;
+            background-image: linear-gradient(90deg, #FF3366, #FF6B3D);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 반응형 조정 */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            .subtitle {
+                font-size: 0.9rem;
+            }
+        }
+
+        .card-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Edoli Web Tools</h1>
-        
-        <section>
-            <h2>Converter</h2>
-            <div>
-                <a class="button-outline" href="convert/motion_photo/">Extract motion photo</a>
-                <a class="button-outline" href="convert/heic2jpg/">HEIC to JPG</a>
+    <div class="container flex-center flex-column" style="height: 100vh;">
+        <div>
+            <div class="title-wrapper">
+                <div class="title"><span class="accent">Edoli Web Tools</span></div>
             </div>
 
-            <div style="height: 64px;"></div>
-
-            <h2>Apps</h2>
-            <div>
-                <a class="button-outline" href="camera">Camera</a>
-                <a class="button-outline" href="calculator">Calculator</a>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">Converter</div>
+                    <div>
+                        <a class="button-outline" href="convert/motion_photo/">Motion photo extractor</a>
+                        <a class="button-outline" href="convert/heic2jpg/">HEIC to JPG</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">Apps</div>
+                    <div>
+                        <a class="button-outline" href="camera">Camera</a>
+                        <a class="button-outline" href="calculator">Calculator</a>
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
     </div>
 </body>
 </html>

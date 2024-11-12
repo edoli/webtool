@@ -4,52 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motion Photo Extractor</title>
-    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>Motion Photo Extractor</h1>
-    <div>
-        <input type="checkbox" id="autoDownload">
-        <label for="autoDownload">Automatically download converted files</label>
-    </div>
-    <div id="dropArea">
-        <p>Drag and drop motion photos here or click to select files</p>
-        <input type="file" id="fileElem" accept="image/*" multiple>
-    </div>
-    <div id="status"></div>
-    <div id="previewArea"></div>
+    <div class="container">
+        <h1>Motion Photo Extractor</h1>
 
+        <checkbox id="autoDownload">Automatically download converted files</checkbox>
+
+        <div id="dropArea" class="drop-area">
+            <p>Drag and drop motion photos here or click to select files</p>
+            <input type="file" id="fileElem" accept="image/*" multiple>
+        </div>
+        <div id="status" class="message-box"></div>
+        <div id="previewArea"></div>
+    </div>
+
+    <script src="/script.js"></script>
     <script>
         let dropArea = document.getElementById('dropArea');
         let fileElem = document.getElementById('fileElem');
         let status = document.getElementById('status');
         let previewArea = document.getElementById('previewArea');
         let autoDownload = document.getElementById('autoDownload');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropArea.classList.add('highlight');
-        }
-
-        function unhighlight(e) {
-            dropArea.classList.remove('highlight');
-        }
 
         dropArea.addEventListener('drop', handleDrop, false);
         dropArea.addEventListener('click', () => fileElem.click());
@@ -65,51 +42,37 @@
             let files = e.target.files;
             status.textContent = `Processing ${files.length} file(s)...`;
             previewArea.innerHTML = '';
-            Array.from(files).forEach((file, index) => {
-                extractMotionPhoto(file, index);
+            
+            const tasks = Array.from(files).map((file, index) => extractMotionPhoto(file, index));
+
+            Promise.all(tasks).then(() => {
+                status.textContent = `Done processing`;
             });
         }
 
         function extractMotionPhoto(file, index) {
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let arrayBuffer = e.target.result;
+            return readFileAsArrayBuffer(file).then(arrayBuffer => {
                 let blob = buffertoblob(arrayBuffer);
                 if (blob) {
-                    let fileItem = document.createElement('div');
+                    const fileItem = document.createElement('div');
                     fileItem.className = 'file-item';
 
-                    let fileInfo = document.createElement('div');
-                    fileInfo.className = 'file-info';
-
-                    let fileName = document.createElement('div');
-                    fileName.className = 'file-name';
-                    fileName.textContent = `File ${index + 1}: ${file.name}`;
-                    fileInfo.appendChild(fileName);
-
-                    let downloadLink = document.createElement('a');
-                    downloadLink.href = URL.createObjectURL(blob);
-                    downloadLink.download = file.name.replace(/\.[^/.]+$/, "") + '.mp4';
-                    downloadLink.textContent = 'Download MP4';
-                    downloadLink.className = 'button';
-                    fileInfo.appendChild(downloadLink);
-
-                    let videoContainer = document.createElement('div');
-                    videoContainer.className = 'video-container';
-
-                    let videoElement = document.createElement('video');
-                    videoElement.src = URL.createObjectURL(blob);
-                    videoElement.controls = true;
-                    videoElement.className = 'preview';
-                    videoContainer.appendChild(videoElement);
-
-                    fileItem.appendChild(fileInfo);
-                    fileItem.appendChild(videoContainer);
+                    const videoURL = URL.createObjectURL(blob);
+                    const downloadFileName = file.name.replace(/\.[^/.]+$/, "") + '.mp4';
+                    fileItem.innerHTML = `
+                        <div class="flex-1">
+                            <div class="file-name">File ${index + 1}: ${file.name}</div>
+                            <a href="${videoURL}" download="${downloadFileName}" class="button">Download MP4</a>
+                        </div>
+                        <div class="flex-1">
+                            <video src="${videoURL}" controls class="fill-parent-width"></video>
+                        </div>
+                    `;
 
                     previewArea.appendChild(fileItem);
 
                     if (autoDownload.checked) {
-                        downloadLink.click();
+                        fileItem.querySelector('a').click();
                     }
                 } else {
                     let fileItem = document.createElement('div');
@@ -121,9 +84,8 @@
                 if (index === fileElem.files.length - 1) {
                     status.textContent = 'All files processed.';
                 }
-            };
-            reader.onerror = function() {
-                console.error('FileReader error:', reader.error);
+            }).catch(error => {
+                console.error('FileReader error:', error);
                 let fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.textContent = `File ${index + 1}: ${file.name} - Error processing the file`;
@@ -132,8 +94,7 @@
                 if (index === fileElem.files.length - 1) {
                     status.textContent = 'All files processed.';
                 }
-            };
-            reader.readAsArrayBuffer(file);
+            });
         }
 
         function buffertoblob(arrayBuffer) {

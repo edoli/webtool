@@ -1,14 +1,17 @@
+/* global */
 :root {
-  --primary-color: #4CAF50;
+  --primary-color: #3498db;
   --secondary-color: #2d9e31;
   --text-color: #333;
   --background-color: #fff;
-  --border-color: #ccc;
-  --highlight-color: #eef;
   --hover-color: #eee;
+  --border-color: #ccc;
   --border-radius: 5px;
   --spacing-small: 10px;
   --spacing-medium: 20px;
+
+  --default-transition: all 0.2s ease;
+  --slow-transition: all 0.4s ease;
 }
 
 * {
@@ -37,7 +40,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   color: #2c3e50;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid var(--secondary-color);
   padding-bottom: 4px;
 }
 
@@ -45,34 +48,150 @@ ul {
   list-style-type: none;
 }
 
-#dropArea {
+/* Flex */
+.flex {
+  display: flex;
+  align-items: center;
+}
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+.flex-1 {
+  flex: 1;
+}
+
+/* common */
+.button {
+  display: inline-block;
+  margin-top: var(--spacing-small);
+  padding: 5px var(--spacing-small);
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: color-mix(in srgb, var(--primary-color) 80%, black)
+}
+
+.block {
+  display: block;
+}
+
+/* Inputs */
+.checkbox-wrapper {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-wrapper input {
+  display: none;
+}
+
+.checkbox-wrapper .checkmark {
+  display: inline-block;
+  position: relative;
+  height: 1em;
+  width: 1em;
+  margin-right: 0.2em;
+  border-radius: 3px;
+  border: 2px solid var(--border-color);
+  transition: var(--default-transition);
+}
+
+.checkbox-wrapper input:checked ~ .checkmark {
+  background-color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.checkbox-wrapper .checkmark:after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    width: 0.25em;
+    height: 0.5em;
+    border: solid white;
+    border-width: 0 0.1em 0.1em 0;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0);
+    opacity: 0;
+    transition: var(--slow-transition);
+}
+
+.checkbox-wrapper input:checked ~ .checkmark:after {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1);
+}
+
+.checkbox-wrapper .checkswitch {
+  display: inline-block;
+  position: relative;
+  height: 1em;
+  width: 2em;
+  margin-right: 0.2em;
+  background-color: var(--hover-color);
+  border-radius: 4px;
+  transition: var(--default-transition);
+}
+
+.checkbox-wrapper input:checked ~ .checkswitch {
+  background-color: var(--primary-color);
+}
+
+.checkbox-wrapper .checkswitch:before {
+  content: '';
+  position: absolute;
+  top: 0.1em;
+  left: 0.1em;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 3px;
+  background-color: white;
+  box-shadow: 0 0.05em 0.1em rgba(0,0,0,0.2);
+  transition: var(--slow-transition);
+}
+
+.checkbox-wrapper input:checked ~ .checkswitch:before {
+  transform: translateX(1em);
+}
+
+/* components */
+.drop-area {
   border: 2px dashed var(--border-color);
   border-radius: var(--border-radius);
-  width: 100%;
   margin: var(--spacing-medium) 0;
   padding: var(--spacing-medium);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--default-transition);
 }
 
-#dropArea.highlight {
+.drop-area.highlight {
   border-color: var(--primary-color);
+  background-color: rgb(from var(--primary-color) r g b / 0.1);
 }
 
-#dropArea:hover {
+.drop-area:hover {
   background: var(--hover-color);
 }
 
-#fileElem {
+.drop-area input[type="file"] {
   display: none;
 }
 
-#status {
+.message-box {
   margin: var(--spacing-medium) 0;
   padding: var(--spacing-small);
-  background: var(--highlight-color);
-  width: 100%;
+  background: var(--hover-color);
   border-radius: var(--border-radius);
 }
 
@@ -94,78 +213,12 @@ ul {
   margin-bottom: var(--spacing-small);
 }
 
-.button {
-  display: inline-block;
-  margin-top: var(--spacing-small);
-  padding: 5px var(--spacing-small);
-  background-color: var(--primary-color);
-  color: white;
-  text-decoration: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.button:hover {
-  background-color: var(--secondary-color);
-}
-
-.block {
-  display: block;
-}
-
-.preview {
+.fill-parent-width {
   width: 100%;
-  max-width: 400px;
   height: auto;
 }
 
-.video-container,
-.image-container {
-  flex: 1;
-}
-
 /* Additional components */
-
-.input {
-  width: 100%;
-  padding: var(--spacing-small);
-  margin-bottom: var(--spacing-medium);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  font-size: 16px;
-}
-
-.textarea {
-  width: 100%;
-  padding: var(--spacing-small);
-  margin-bottom: var(--spacing-medium);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  font-size: 16px;
-  resize: vertical;
-}
-
-.select {
-  width: 100%;
-  padding: var(--spacing-small);
-  margin-bottom: var(--spacing-medium);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  font-size: 16px;
-  background-color: var(--background-color);
-}
-
-.checkbox,
-.radio {
-  margin-right: var(--spacing-small);
-}
-
-.label {
-  display: inline-block;
-  margin-bottom: var(--spacing-small);
-}
-
 .alert {
   padding: var(--spacing-small);
   margin-bottom: var(--spacing-medium);

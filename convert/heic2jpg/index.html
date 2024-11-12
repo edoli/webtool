@@ -4,53 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HEIC to JPG Converter</title>
-    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>HEIC to JPG Converter</h1>
-    <div>
-        <input type="checkbox" id="autoDownload">
-        <label for="autoDownload">Automatically download converted files</label>
+    <div class="container">
+        <h1>HEIC to JPG Converter</h1>
+
+        <checkbox id="autoDownload">Automatically download converted files</checkbox>
+
+        <div id="dropArea" class="drop-area">
+            <p>Drag and drop HEIC files here or click to select files</p>
+            <input type="file" id="fileElem" accept=".heic" multiple>
+        </div>
+
+        <div id="status" class="message-box"></div>
+        <div id="previewArea"></div>
     </div>
-    <div id="dropArea">
-        <p>Drag and drop HEIC files here or click to select files</p>
-        <input type="file" id="fileElem" accept=".heic" multiple>
-    </div>
-    <div id="status"></div>
-    <div id="previewArea"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.3/heic2any.min.js"></script>
+    <script src="/script.js"></script>
     <script>
         let dropArea = document.getElementById('dropArea');
         let fileElem = document.getElementById('fileElem');
         let status = document.getElementById('status');
         let previewArea = document.getElementById('previewArea');
         let autoDownload = document.getElementById('autoDownload');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropArea.classList.add('highlight');
-        }
-
-        function unhighlight(e) {
-            dropArea.classList.remove('highlight');
-        }
 
         dropArea.addEventListener('drop', handleDrop, false);
         dropArea.addEventListener('click', () => fileElem.click());
@@ -66,50 +44,39 @@
             let files = e.target.files;
             status.textContent = `Processing ${files.length} file(s)...`;
             previewArea.innerHTML = '';
-            Array.from(files).forEach((file, index) => {
-                convertHeicToJpg(file, index);
+            
+            const tasks = Array.from(files).map((file, index) => convertHeicToJpg(file, index));
+
+            Promise.all(tasks).then(() => {
+                status.textContent = `Done processing`;
             });
         }
 
-        function convertHeicToJpg(file, index) {
-            heic2any({
+        async function convertHeicToJpg(file, index) {
+            return heic2any({
                 blob: file,
                 toType: "image/jpeg",
                 quality: 0.8
             }).then(jpgBlob => {
-                let fileItem = document.createElement('div');
+                const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
 
-                let fileInfo = document.createElement('div');
-                fileInfo.className = 'file-info';
-
-                let fileName = document.createElement('div');
-                fileName.className = 'file-name';
-                fileName.textContent = `File ${index + 1}: ${file.name}`;
-                fileInfo.appendChild(fileName);
-
-                let downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(jpgBlob);
-                downloadLink.download = file.name.replace(/\.heic$/i, ".jpg");
-                downloadLink.textContent = 'Download JPG';
-                downloadLink.className = 'button';
-                fileInfo.appendChild(downloadLink);
-
-                let imageContainer = document.createElement('div');
-                imageContainer.className = 'image-container';
-
-                let imageElement = document.createElement('img');
-                imageElement.src = URL.createObjectURL(jpgBlob);
-                imageElement.className = 'preview';
-                imageContainer.appendChild(imageElement);
-
-                fileItem.appendChild(fileInfo);
-                fileItem.appendChild(imageContainer);
+                const imageURL = URL.createObjectURL(jpgBlob);
+                const downloadFileName = file.name.replace(/\.heic$/i, ".jpg");
+                fileItem.innerHTML = `
+                    <div class="flex-1">
+                        <div class="file-name">File ${index + 1}: ${file.name}</div>
+                        <a href="${imageURL}" download="${downloadFileName}" class="button">Download JPG</a>
+                    </div>
+                    <div class="flex-1">
+                        <img src="${imageURL}" class="fill-parent-width" />
+                    </div>
+                `;
 
                 previewArea.appendChild(fileItem);
 
                 if (autoDownload.checked) {
-                    downloadLink.click();
+                    fileItem.querySelector('a').click();
                 }
 
                 if (index === fileElem.files.length - 1) {

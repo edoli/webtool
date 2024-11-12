@@ -5,18 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOV to MP4 변환기</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.10.1/ffmpeg.min.js"></script>
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>MOV to MP4 변환기</h1>
-    <div id="dropArea">
-        <p>MOV 파일을 여기에 끌어다 놓거나 클릭하여 선택하세요</p>
-        <input type="file" id="fileElem" accept=".mov" multiple>
+    <div class="container">
+        <h1>MOV to MP4 변환기</h1>
+        <div id="dropArea" class="drop-area">
+            <p>MOV 파일을 여기에 끌어다 놓거나 클릭하여 선택하세요</p>
+            <input type="file" id="fileElem" accept=".mov" multiple>
+        </div>
+        <button class="button" id="convertBtn">변환하기</button>
+        <div id="status"></div>
+        <div id="previewArea"></div>
     </div>
-    <button class="button" id="convertBtn">변환하기</button>
-    <div id="status"></div>
-    <div id="previewArea"></div>
 
+
+    <script src="/script.js"></script>
     <script>
         const { createFFmpeg, fetchFile } = FFmpeg;
         const ffmpeg = createFFmpeg({ log: true });

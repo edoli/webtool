@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Calculator</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 1.5em;
+            background-color: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 42rem;
+            padding: 1.5em;
+        }
+
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5em;
+        }
+
+        .result-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 1.25em;
+            font-weight: 600;
+        }
+
+        .variable-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .variable-name {
+            padding-right: 1em;
+        }
+
+        .variable-input {
+            flex: 1;
+        }
+
+        .functions-info, .constants-info {
+            color: #6b7280;
+            font-size: 0.8em;
+        }
+
+        .functions-list, .constants-list {
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-content">
+            <div class="flex">
+                <label class="input-label variable-name">수식 입력</label>
+                <input 
+                    type="text" 
+                    id="formula-input"
+                    class="variable-input"
+                    placeholder="예: sin(x) + cos(y)"
+                    style="font-family: monospace;"
+                >
+            </div>
+
+            <div class="result-display">
+                <span id="formula-display"></span>
+                <span>= <span id="result-display"></span></span>
+            </div>
+
+            <div id="variables-container">
+                <!-- Variables will be dynamically inserted here -->
+            </div>
+
+            <div class="functions-info">
+                <p>사용 가능한 함수들:</p>
+                <p id="functions-list" class="functions-list"></p>
+            </div>
+
+            <div class="constants-info">
+                <p>사용 가능한 상수들:</p>
+                <p id="constants-list" class="constants-list"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get all functions and constants in Math
+        const mathFunctions = {
+            rad: (deg) => deg * Math.PI / 180.0,
+            deg: (rad) => rad * 180 / Math.PI,
+        };
+
+        const mathConstants = {};
+
+        Object.getOwnPropertyNames(Math).forEach(name => {
+            if (typeof Math[name] === 'function') {
+                mathFunctions[name] = Math[name];
+            } else {
+                mathConstants[name] = Math[name];
+            }
+        });
+
+        const mathPredefined = { ...mathFunctions, ...mathConstants};
+
+        // State 관리
+        let formulaTemplate = 'sin(x) + cos(y)';
+        const variables = {};
+
+        // DOM 요소들
+        const formulaInput = document.getElementById('formula-input');
+        const formulaDisplay = document.getElementById('formula-display');
+        const resultDisplay = document.getElementById('result-display');
+        const variablesContainer = document.getElementById('variables-container');
+        const functionsList = document.getElementById('functions-list');
+        const constantsList = document.getElementById('constants-list');
+
+        // 함수 목록 표시
+        functionsList.textContent = Object.keys(mathFunctions).join(', ');
+
+        // 상수 목록 표시
+        constantsList.textContent = Object.keys(mathConstants).join(', ');
+
+        // 변수 추출 함수
+        function extractVariables(formula) {
+            const predefinedNames = Object.keys(mathPredefined).join('|');
+            const regex = new RegExp(`(?<!(?:${predefinedNames}))\\b[a-zA-Z]\\b`, 'g');
+            const vars = new Set(formula.match(regex) || []);
+            return Array.from(vars);
+        }
+
+        // 결과 계산 함수
+        function calculateResult() {
+            try {
+                const context = {
+                    ...mathPredefined,
+                    ...Object.fromEntries(
+                        Object.entries(variables).map(([key, value]) => [key, Number(value)])
+                    )
+                };
+
+                const formula = formulaTemplate;
+                const calculate = new Function(...Object.keys(context), `return ${formula}`);
+                const result = calculate(...Object.values(context));
+                return typeof result === 'number' ? result.toFixed(4) : result;
+            } catch (error) {
+                return 'Error: ' + error.message;
+            }
+        }
+
+        // 변수 입력 필드 업데이트
+        function updateVariableInputs() {
+            const varsInFormula = extractVariables(formulaTemplate);
+            
+            // 새로운 변수 객체 생성
+            varsInFormula.forEach(variable => {
+                variables[variable] = variables[variable] || "1";
+            });
+
+            // 변수 입력 필드 렌더링
+            variablesContainer.innerHTML = '';
+            varsInFormula.sort().forEach((name) => {
+                const value = variables[name];
+                const div = document.createElement('div');
+                div.className = 'variable-container';
+                div.innerHTML = `
+                    <span class="variable-name">${name} :</span>
+                    <input
+                        type="number"
+                        value="${value}"
+                        data-variable="${name}"
+                        class="variable-input"
+                    >
+                `;
+                variablesContainer.appendChild(div);
+            });
+
+            // 결과 업데이트
+            updateDisplay();
+        }
+
+        // 화면 업데이트
+        function updateDisplay() {
+            formulaDisplay.textContent = formulaTemplate;
+            resultDisplay.textContent = calculateResult();
+        }
+
+        // 이벤트 리스너
+        formulaInput.addEventListener('input', (e) => {
+            formulaTemplate = e.target.value;
+            updateVariableInputs();
+        });
+
+        variablesContainer.addEventListener('input', (e) => {
+            if (e.target.classList.contains('variable-input')) {
+                const name = e.target.dataset.variable;
+                variables[name] = e.target.value;
+                updateDisplay();
+            }
+        });
+
+        // 초기화
+        formulaInput.value = formulaTemplate;
+        updateVariableInputs();
+    </script>
+</body>
+</html>

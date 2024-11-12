@@ -27,12 +27,6 @@ body {
   color: var(--text-color);
 }
 
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: var(--spacing-medium);
-}
-
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-medium);
   color: var(--text-color);
@@ -46,6 +40,16 @@ h1 {
 
 ul {
   list-style-type: none;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-medium);
+}
+
+.block {
+  display: block;
 }
 
 /* Flex */
@@ -82,8 +86,23 @@ ul {
   background-color: color-mix(in srgb, var(--primary-color) 80%, black)
 }
 
-.block {
-  display: block;
+.button-outline {
+  display: inline-block;
+  margin-top: var(--spacing-small);
+  padding: 5px var(--spacing-small);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  background-color: var(--hover-color);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--default-transition);
+}
+
+.button-outline:hover {
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  background-color: rgb(from var(--primary-color) r g b / 0.1);
 }
 
 /* Inputs */

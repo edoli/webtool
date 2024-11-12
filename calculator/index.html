@@ -42,6 +42,16 @@
             font-weight: 600;
         }
 
+        #formula-input {
+            flex: 1;
+            width: 0;
+            font-size: inherit;
+            font-weight: inherit;
+            border: none;
+            background: none;
+            border-radius: 0;
+        }
+
         .variable-container {
             display: flex;
             justify-content: space-between;
@@ -70,19 +80,12 @@
 <body>
     <div class="card">
         <div class="card-content">
-            <div class="flex">
-                <label class="input-label variable-name">수식 입력</label>
+
+            <div class="result-display">
                 <input 
                     type="text" 
                     id="formula-input"
-                    class="variable-input"
-                    placeholder="예: sin(x) + cos(y)"
-                    style="font-family: monospace;"
-                >
-            </div>
-
-            <div class="result-display">
-                <span id="formula-display"></span>
+                    placeholder="예: sin(x) + cos(y)">
                 <span>= <span id="result-display"></span></span>
             </div>
 
@@ -127,7 +130,6 @@
 
         // DOM 요소들
         const formulaInput = document.getElementById('formula-input');
-        const formulaDisplay = document.getElementById('formula-display');
         const resultDisplay = document.getElementById('result-display');
         const variablesContainer = document.getElementById('variables-container');
         const functionsList = document.getElementById('functions-list');
@@ -157,7 +159,7 @@
                     )
                 };
 
-                const formula = formulaTemplate;
+                const formula = formulaTemplate.replace("×", "*").replace("÷", "/");
                 const calculate = new Function(...Object.keys(context), `return ${formula}`);
                 const result = calculate(...Object.values(context));
                 return typeof result === 'number' ? result.toFixed(4) : result;
@@ -221,7 +223,6 @@
 
         // 화면 업데이트
         function updateDisplay() {
-            formulaDisplay.textContent = formulaTemplate;
             resultDisplay.textContent = calculateResult();
             saveStateToURL();
         }

@@ -1,6 +1,7 @@
 /* global */
 :root {
   --primary-color: #3498db;
+  --negative-color: #db3455;
   --secondary-color: #2d9e31;
   --text-color: #333;
   --background-color: #f0f0f0;
@@ -25,6 +26,10 @@ body {
   line-height: 1.6;
   background-color: var(--background-color);
   color: var(--text-color);
+}
+
+svg {
+  fill: var(--text-color);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -111,7 +116,14 @@ ul {
 }
 
 /* Inputs */
-
+input[type="number"].plain-input, input[type="text"].plain-input {
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+}
 
 input[type="number"], input[type="text"] {
   padding: 0.5rem;

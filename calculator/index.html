@@ -31,7 +31,13 @@
             gap: 1.5em;
         }
 
-        .result-display {
+        #formula-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .formula-block {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -42,14 +48,36 @@
             font-weight: 600;
         }
 
-        #formula-input {
+        .formula-input {
             flex: 1;
             width: 0;
-            font-size: inherit;
-            font-weight: inherit;
-            border: none;
-            background: none;
-            border-radius: 0;
+        }
+
+        .formula-button-container {
+            display: flex;
+            gap: 1em;
+        }
+
+        .formula-button {
+            cursor: pointer;
+            width: 2em;
+            transition: var(--default-transition);
+        }
+
+        #formula-add-button:hover {
+            fill: var(--primary-color);
+        }
+
+        #formula-minus-button {
+            display: none;
+        }
+
+        #formula-minus-button.show {
+            display: block;
+        }
+
+        #formula-minus-button:hover {
+            fill: var(--negative-color);
         }
 
         .variable-container {
@@ -80,13 +108,12 @@
 <body>
     <div class="card">
         <div class="card-content">
+            <div id="formula-container">
+            </div>
 
-            <div class="result-display">
-                <input 
-                    type="text" 
-                    id="formula-input"
-                    placeholder="예: sin(x) + cos(y)">
-                <span>= <span id="result-display"></span></span>
+            <div class="flex-center formula-button-container">
+                <svg xmlns="http://www.w3.org/2000/svg" id="formula-minus-button" class="formula-button" viewBox="0 -960 960 960"><path d="M280-440h400v-80H280v80ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" id="formula-add-button" class="formula-button" viewBox="0 -960 960 960"><path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
             </div>
 
             <div id="variables-container">
@@ -125,12 +152,13 @@
         const mathPredefined = { ...mathFunctions, ...mathConstants};
 
         // State 관리
-        let formulaTemplate = 'sin(x) + cos(y)';
+        const formulas = [];
         const variables = {};
 
         // DOM 요소들
-        const formulaInput = document.getElementById('formula-input');
-        const resultDisplay = document.getElementById('result-display');
+        const formulaContainer = document.getElementById('formula-container');
+        const formulaAddButton = document.getElementById('formula-add-button');
+        const formulaMinusButton = document.getElementById('formula-minus-button');
         const variablesContainer = document.getElementById('variables-container');
         const functionsList = document.getElementById('functions-list');
         const constantsList = document.getElementById('constants-list');
@@ -141,6 +169,44 @@
         // 상수 목록 표시
         constantsList.textContent = Object.keys(mathConstants).join(', ');
 
+        function createFormulaBlock(initialTemplate="") {
+            const formulaBlock = document.createElement('div');
+            formulaBlock.className = 'formula-block';
+
+            const formulaInput = document.createElement('input');
+            formulaInput.type = 'text';
+            formulaInput.className = 'formula-input plain-input';
+            formulaInput.placeholder = '예: sin(x) + cos(y)';
+            formulaInput.value = initialTemplate;
+
+            const resultSpan = document.createElement('span');
+            resultSpan.textContent = "= ";
+
+            const resultDisplay = document.createElement('span');
+
+            resultSpan.appendChild(resultDisplay);
+
+            formulaBlock.appendChild(formulaInput);
+            formulaBlock.appendChild(resultSpan);
+
+            const formula = {
+                formulaTemplate: "",
+                formulaBlock: formulaBlock,
+                formulaInput: formulaInput,
+                resultDisplay: resultDisplay,
+            };
+            formulas.push(formula);
+
+            formulaInput.addEventListener('input', (e) => {
+                formula.formulaTemplate = e.target.value;
+                updateVariableInputs();
+            });
+            
+            formulaContainer.appendChild(formulaBlock);
+
+            return formula;
+        }
+
         // 변수 추출 함수
         function extractVariables(formula) {
             const predefinedNames = Object.keys(mathPredefined).join('|');
@@ -150,7 +216,7 @@
         }
 
         // 결과 계산 함수
-        function calculateResult() {
+        function calculateResult(formulaObj) {
             try {
                 const context = {
                     ...mathPredefined,
@@ -159,8 +225,8 @@
                     )
                 };
 
-                const formula = formulaTemplate.replace("×", "*").replace("÷", "/");
-                const calculate = new Function(...Object.keys(context), `return ${formula}`);
+                const formulaT = formulaObj.formulaTemplate.replace("×", "*").replace("÷", "/");
+                const calculate = new Function(...Object.keys(context), `return ${formulaT}`);
                 const result = calculate(...Object.values(context));
                 return typeof result === 'number' ? result.toFixed(4) : result;
             } catch (error) {
@@ -170,7 +236,8 @@
 
         // 변수 입력 필드 업데이트
         function updateVariableInputs() {
-            const varsInFormula = extractVariables(formulaTemplate);
+            const varsInFormula = [...new Set(
+                formulas.map(formula => extractVariables(formula.formulaTemplate)).flat())];
             
             // 새로운 변수 객체 생성
             varsInFormula.forEach(variable => {
@@ -201,7 +268,7 @@
 
         // 상태를 URL에 저장하는 함수
         function saveStateToURL() {
-            const encodedFormula = encodeURIComponent(formulaTemplate);
+            const encodedFormula = encodeURIComponent(btoa(formulas.map(formula => formula.formulaTemplate)));
             const encodedVariables = encodeURIComponent(btoa(JSON.stringify(variables)));
             const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}`;
             history.replaceState(null, '', url);
@@ -214,7 +281,12 @@
             const variablesParam = params.get('v');
 
             if (formulaParam) {
-                formulaTemplate = decodeURIComponent(formulaParam);
+                const formulaTemplates = atob(decodeURIComponent(formulaParam)).split(",");
+                
+                formulaTemplates.forEach(formulaTemplate => {
+                    const formula = createFormulaBlock(formulaTemplate);
+                    formula.formulaTemplate = formulaTemplate;
+                });
             }
             if (variablesParam) {
                 Object.assign(variables, JSON.parse(atob(decodeURIComponent(variablesParam))));
@@ -223,14 +295,38 @@
 
         // 화면 업데이트
         function updateDisplay() {
-            resultDisplay.textContent = calculateResult();
+            formulas.forEach((formula, index) => {
+                formula.resultDisplay.textContent = calculateResult(formula);
+            })
             saveStateToURL();
         }
 
         // 이벤트 리스너
-        formulaInput.addEventListener('input', (e) => {
-            formulaTemplate = e.target.value;
+        formulaMinusButton.addEventListener('click', () => {
+            if (formulas.length === 1) {
+                return;
+            }
+
+            const lastFormula = formulas[formulas.length -1];
+            if (lastFormula) {
+                formulaContainer.removeChild(lastFormula.formulaBlock);
+                formulas.pop();
+                updateVariableInputs();
+                
+                if (formulas.length === 1) {
+                    formulaMinusButton.classList.remove("show");
+                    return;
+                }
+            }
+        });
+
+        formulaAddButton.addEventListener('click', () => {
+            createFormulaBlock();
             updateVariableInputs();
+            
+            if (formulas.length > 1) {
+                formulaMinusButton.classList.add("show");
+            }
         });
 
         variablesContainer.addEventListener('input', (e) => {
@@ -243,7 +339,12 @@
 
         // 초기화
         loadStateFromURL();
-        formulaInput.value = formulaTemplate;
+
+        if (formulas.length === 0) {
+            createFormulaBlock();
+        }
+
+        // formulaInput.value = formulaTemplate;
         updateVariableInputs();
     </script>
 </body>

@@ -231,7 +231,7 @@
                 const formulaT = formulaObj.formulaTemplate.replace("×", "*").replace("÷", "/");
                 const calculate = new Function(...Object.keys(context), `return ${formulaT}`);
                 const result = calculate(...Object.values(context));
-                return typeof result === 'number' ? result.toFixed(4) : result;
+                return typeof result === 'number' ? result.toFixed(4) : "";
             } catch (error) {
                 return 'Error: ' + error.message;
             }

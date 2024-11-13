@@ -8,6 +8,7 @@
   --hover-color: #eee;
   --border-color: #ccc;
   --border-radius: 5px;
+  --spacing-thin: 5px;
   --spacing-small: 10px;
   --spacing-medium: 20px;
 
@@ -92,7 +93,7 @@ ul {
 .button {
   display: inline-block;
   margin-top: var(--spacing-small);
-  padding: 5px var(--spacing-small);
+  padding: var(--spacing-thin) var(--spacing-small);
   background-color: var(--primary-color);
   color: white;
   text-decoration: none;
@@ -108,7 +109,7 @@ ul {
 .button-outline {
   display: inline-block;
   margin-top: var(--spacing-small);
-  padding: 5px var(--spacing-small);
+  padding: var(--spacing-thin) var(--spacing-small);
   color: var(--text-color);
   border: 1px solid var(--border-color);
   background-color: var(--hover-color);
@@ -122,6 +123,10 @@ ul {
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
   background-color: rgb(from var(--primary-color) r g b / 0.1);
+}
+
+.button-large {
+  padding: var(--spacing-small) var(--spacing-medium);
 }
 
 /* Inputs */

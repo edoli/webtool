@@ -317,10 +317,11 @@
             formulas.forEach((formula, index) => {
                 const result = calculateResult(formula, tmpContext);
 
+                console.log(result);
                 if (typeof result === 'number') {
                     tmpContext[`r${index + 1}`] = result;
                     formula.resultDisplay.textContent = typeof result === 'number' ? result.toFixed(4) : "";
-                } else if (typeof result === 'string' && !result.startsWith('Error')) {
+                } else if (result === undefined || (result === 'string' && !result.startsWith('Error'))) {
                     formula.resultDisplay.textContent = "";
                 } else {
                     formula.resultDisplay.textContent = "Error";

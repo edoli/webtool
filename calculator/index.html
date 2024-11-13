@@ -320,6 +320,8 @@
                 if (typeof result === 'number') {
                     tmpContext[`r${index + 1}`] = result;
                     formula.resultDisplay.textContent = typeof result === 'number' ? result.toFixed(4) : "";
+                } else if (typeof result === 'string' && !result.startsWith('Error')) {
+                    formula.resultDisplay.textContent = "";
                 } else {
                     formula.resultDisplay.textContent = "Error";
                     errors.push(result);

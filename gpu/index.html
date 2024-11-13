@@ -5,54 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebGPU vs GPU.js Benchmark</title>
     <script src="https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.min.js"></script>
+    <link rel="stylesheet" href="../style.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-        }
-        #result {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #e9e9e9;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>WebGPU vs GPU.js Benchmark</h1>
+        <div class="title">WebGPU vs GPU.js Benchmark</div>
         <p>This page runs a benchmark comparing matrix multiplication performance between WebGPU and GPU.js.</p>
-        <button onclick="runBenchmark()">Run Benchmark</button>
-        <div id="result"></div>
+        <div style="display: flex; gap: 1em;">
+            <checkbox id="enableWebGPU">WebGPU</checkbox>
+            <checkbox id="enableGPUjs">GPU.js</checkbox>
+            <checkbox id="enableCPU">CPU</checkbox>
+        </div>
+        <div class="button button-large" onclick="runBenchmark()">Run Benchmark</div>
+        <div id="result" class="message-box"></div>
     </div>
 
+    <script src="../../script.js"></script>
     <script>
         // 행렬 크기 설정
         const MATRIX_SIZE = 1024;
@@ -215,72 +185,83 @@
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = "벤치마크 실행 중...";
 
+            const enableWebGPU = document.getElementById('enableWebGPU').checked;
+            const enableGPUjs = document.getElementById('enableGPUjs').checked;
+            const enableCPU = document.getElementById('enableCPU').checked;
+            
+
             const matrixA = createRandomMatrix(MATRIX_SIZE);
             const matrixB = createRandomMatrix(MATRIX_SIZE);
 
             let webgpuResult, webgpuTime, gpujsResult, gpujsTime;
 
-            try {
-                console.log("Starting WebGPU benchmark...");
-                // warm up
-                webgpuResult = await runWebGPU(matrixA, matrixB);
-                const webgpuStart = performance.now();
-                webgpuResult = await runWebGPU(matrixA, matrixB);
-                const webgpuEnd = performance.now();
-                webgpuTime = webgpuEnd - webgpuStart;
-                console.log(`WebGPU time: ${webgpuTime} ms`);
-            } catch (error) {
-                console.error("WebGPU 벤치마크 실행 중 오류 발생:", error);
-            }
-
-            try {
-                console.log("Starting GPU.js benchmark...");
-                // warm up
-                gpujsResult = runGPUjs(matrixA, matrixB);
-                const gpujsStart = performance.now();
-                gpujsResult = runGPUjs(matrixA, matrixB);
-                const gpujsEnd = performance.now();
-                gpujsTime = gpujsEnd - gpujsStart;
-                console.log(`GPU.js time: ${gpujsTime} ms`);
-            } catch (error) {
-                console.error("GPU.js 벤치마크 실행 중 오류 발생:", error);
-            }
-
-            try {
-                console.log("Starting CPU benchmark...");
-                const cpuStart = performance.now();
-                cpuResult = runCPU(matrixA, matrixB);
-                const cpuEnd = performance.now();
-                cpuTime = cpuEnd - cpuStart;
-                console.log(`CPU time: ${cpuTime} ms`);
-            } catch (error) {
-                console.error("CPU 벤치마크 실행 중 오류 발생:", error);
-            }
-
             let resultHTML = "<h2>벤치마크 결과</h2>";
 
-            if (webgpuResult) {
-                resultHTML += `<p>WebGPU 실행 시간: ${webgpuTime.toFixed(2)} ms</p>`;
-                resultHTML += `<p>WebGPU 결과 (첫 번째 요소): ${webgpuResult[0]}</p>`;
-                resultHTML += `<p>WebGPU 결과 ([3][2] 요소): ${webgpuResult[3 * MATRIX_SIZE + 2]}</p>`;
-            } else {
-                resultHTML += "<p>WebGPU 벤치마크 실행 실패</p>";
+            if (enableWebGPU) {
+                try {
+                    console.log("Starting WebGPU benchmark...");
+                    // warm up
+                    // await runWebGPU(matrixA, matrixB);
+                    const webgpuStart = performance.now();
+                    webgpuResult = await runWebGPU(matrixA, matrixB);
+                    const webgpuEnd = performance.now();
+                    webgpuTime = webgpuEnd - webgpuStart;
+                    console.log(`WebGPU time: ${webgpuTime} ms`);
+                } catch (error) {
+                    console.error("WebGPU 벤치마크 실행 중 오류 발생:", error);
+                }
+
+                if (webgpuResult) {
+                    resultHTML += `<p>WebGPU 실행 시간: ${webgpuTime.toFixed(2)} ms</p>`;
+                    resultHTML += `<p>WebGPU 결과 (첫 번째 요소): ${webgpuResult[0]}</p>`;
+                    resultHTML += `<p>WebGPU 결과 ([3][2] 요소): ${webgpuResult[3 * MATRIX_SIZE + 2]}</p>`;
+                } else {
+                    resultHTML += "<p>WebGPU 벤치마크 실행 실패</p>";
+                }
             }
 
-            if (gpujsResult) {
-                resultHTML += `<p>GPU.js 실행 시간: ${gpujsTime.toFixed(2)} ms</p>`;
-                resultHTML += `<p>GPU.js 결과 (첫 번째 요소): ${gpujsResult[0][0]}</p>`;
-                resultHTML += `<p>GPU.js 결과 ([3][2] 요소): ${gpujsResult[3][2]}</p>`;
-            } else {
-                resultHTML += "<p>GPU.js 벤치마크 실행 실패</p>";
+            if (enableGPUjs) {
+                try {
+                    console.log("Starting GPU.js benchmark...");
+                    // warm up
+                    // runGPUjs(matrixA, matrixB);
+                    const gpujsStart = performance.now();
+                    gpujsResult = runGPUjs(matrixA, matrixB);
+                    const gpujsEnd = performance.now();
+                    gpujsTime = gpujsEnd - gpujsStart;
+                    console.log(`GPU.js time: ${gpujsTime} ms`);
+                } catch (error) {
+                    console.error("GPU.js 벤치마크 실행 중 오류 발생:", error);
+                }
+
+                if (gpujsResult) {
+                    resultHTML += `<p>GPU.js 실행 시간: ${gpujsTime.toFixed(2)} ms</p>`;
+                    resultHTML += `<p>GPU.js 결과 (첫 번째 요소): ${gpujsResult[0][0]}</p>`;
+                    resultHTML += `<p>GPU.js 결과 ([3][2] 요소): ${gpujsResult[3][2]}</p>`;
+                } else {
+                    resultHTML += "<p>GPU.js 벤치마크 실행 실패</p>";
+                }
             }
 
-            if (cpuResult) {
-                resultHTML += `<p>CPU 실행 시간: ${cpuTime.toFixed(2)} ms</p>`;
-                resultHTML += `<p>CPU 결과 (첫 번째 요소): ${cpuResult[0][0]}</p>`;
-                resultHTML += `<p>CPU 결과 ([3][2] 요소): ${cpuResult[3][2]}</p>`;
-            } else {
-                resultHTML += "<p>CPU 벤치마크 실행 실패</p>";
+            if (enableCPU) {
+                try {
+                    console.log("Starting CPU benchmark...");
+                    const cpuStart = performance.now();
+                    cpuResult = runCPU(matrixA, matrixB);
+                    const cpuEnd = performance.now();
+                    cpuTime = cpuEnd - cpuStart;
+                    console.log(`CPU time: ${cpuTime} ms`);
+                } catch (error) {
+                    console.error("CPU 벤치마크 실행 중 오류 발생:", error);
+                }
+
+                if (cpuResult) {
+                    resultHTML += `<p>CPU 실행 시간: ${cpuTime.toFixed(2)} ms</p>`;
+                    resultHTML += `<p>CPU 결과 (첫 번째 요소): ${cpuResult[0][0]}</p>`;
+                    resultHTML += `<p>CPU 결과 ([3][2] 요소): ${cpuResult[3][2]}</p>`;
+                } else {
+                    resultHTML += "<p>CPU 벤치마크 실행 실패</p>";
+                }
             }
 
             resultDiv.innerHTML = resultHTML;

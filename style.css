@@ -232,11 +232,24 @@ input[type="number"], input[type="text"] {
   display: none;
 }
 
-.message-box {
+.message-box, .info-box, .error-box {
   margin: var(--spacing-medium) 0;
   padding: var(--spacing-small);
-  background: var(--hover-color);
+  background-color: rgba(0,0,0,0.05);
   border-radius: var(--border-radius);
+  font-size: 14px;
+}
+
+.info-box {
+  color: var(--primary-color);
+}
+
+.error-box {
+  color: var(--negative-color);
+}
+
+.message-box:empty, .info-box:empty, .error-box:empty {
+  display: none;
 }
 
 .file-item {

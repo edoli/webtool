@@ -116,6 +116,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" id="formula-add-button" class="formula-button" viewBox="0 -960 960 960"><path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
             </div>
 
+            <div id="error-box" class="error-box"><pre></pre></div>
+
             <div id="variables-container">
                 <!-- Variables will be dynamically inserted here -->
             </div>
@@ -162,6 +164,7 @@
         const variablesContainer = document.getElementById('variables-container');
         const functionsList = document.getElementById('functions-list');
         const constantsList = document.getElementById('constants-list');
+        const errorBox = document.getElementById('error-box').firstChild;
 
         // 함수 목록 표시
         functionsList.textContent = Object.keys(mathFunctions).join(', ');
@@ -295,9 +298,17 @@
 
         // 화면 업데이트
         function updateDisplay() {
+            const errors = [];
             formulas.forEach((formula, index) => {
-                formula.resultDisplay.textContent = calculateResult(formula);
-            })
+                const result = calculateResult(formula);
+                if (!result.startsWith('Error')) {
+                    formula.resultDisplay.textContent = result;
+                } else {
+                    formula.resultDisplay.textContent = "Error";
+                    errors.push(result);
+                }
+            });
+            errorBox.textContent = errors.join('\n');
             saveStateToURL();
         }
 

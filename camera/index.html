@@ -141,7 +141,13 @@
         <div id="error-message"></div>
     
         <div class="button-container">
-    
+            <select id="filterSelect">
+                <option value="none">필터 없음</option>
+                <option value="grayscale">흑백</option>
+                <option value="sepia">세피아</option>
+                <option value="invert">색상 반전</option>
+                <option value="brightness">밝기 증가</option>
+            </select>
             <button id="startButton">카메라 켜기</button>
             <button id="captureButton">사진 촬영</button>
             <button id="switchButton">카메라 전환</button>
@@ -152,7 +158,9 @@
         <img id="captured-photo" alt="촬영된 사진" />
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.min.js"></script>
     <script>
+        const gpu = new GPU.GPU();
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const capturedPhoto = document.getElementById('captured-photo');
@@ -166,6 +174,80 @@
         let stream = null;
         let facingMode = 'user'; // 'user' for front camera, 'environment' for back camera
         let cameras = []; // 사용 가능한 카메라 목록
+
+        let currentFilter = 'none';
+        const filterSelect = document.getElementById('filterSelect');
+
+        // 필터 커널 정의
+        const grayscaleKernel = gpu.createKernel(function(image) {
+            const pixel = image[this.thread.y][this.thread.x];
+            const gray = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2];
+            this.color(gray, gray, gray, 1);
+        }).setGraphical(true).setDynamicOutput(true);
+
+        const sepiaKernel = gpu.createKernel(function(image) {
+            const pixel = image[this.thread.y][this.thread.x];
+            const r = pixel[0] * 0.393 + pixel[1] * 0.769 + pixel[2] * 0.189;
+            const g = pixel[0] * 0.349 + pixel[1] * 0.686 + pixel[2] * 0.168;
+            const b = pixel[0] * 0.272 + pixel[1] * 0.534 + pixel[2] * 0.131;
+            this.color(Math.min(r, 1), Math.min(g, 1), Math.min(b, 1), 1);
+        }).setGraphical(true).setDynamicOutput(true);
+
+        const invertKernel = gpu.createKernel(function(image) {
+            const pixel = image[this.thread.y][this.thread.x];
+            this.color(1 - pixel[0], 1 - pixel[1], 1 - pixel[2], 1);
+        }).setGraphical(true).setDynamicOutput(true);
+
+        const brightnessKernel = gpu.createKernel(function(image) {
+            const pixel = image[this.thread.y][this.thread.x];
+            this.color(
+                Math.min(pixel[0] * 1.5, 1),
+                Math.min(pixel[1] * 1.5, 1),
+                Math.min(pixel[2] * 1.5, 1),
+                1
+            );
+        }).setGraphical(true).setDynamicOutput(true);
+
+        // 비디오 프레임 처리 함수
+        function processFrame() {
+            if (!stream) return;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            if (currentFilter !== 'none') {
+                let kernel;
+                switch (currentFilter) {
+                    case 'grayscale':
+                        kernel = grayscaleKernel;
+                        break;
+                    case 'sepia':
+                        kernel = sepiaKernel;
+                        break;
+                    case 'invert':
+                        kernel = invertKernel;
+                        break;
+                    case 'brightness':
+                        kernel = brightnessKernel;
+                        break;
+                }
+
+                if (kernel) {
+                    kernel.setOutput([canvas.width, canvas.height]);
+                    kernel(imageData);
+                    const newCanvas = kernel.canvas;
+                    ctx.drawImage(newCanvas, 0, 0);
+                }
+            }
+
+            requestAnimationFrame(processFrame);
+        }
+
+        // 필터 변경 이벤트 리스너
+        filterSelect.addEventListener('change', (e) => {
+            currentFilter = e.target.value;
+        });
 
         // 에러 표시 함수
         function showError(message) {
@@ -216,6 +298,14 @@
                 });
 
                 video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.style.display = 'block';
+                    video.style.display = 'none';
+                    processFrame(); // 프레임 처리 시작
+                };
+
                 startButton.textContent = '카메라 끄기';
                 captureButton.style.display = 'inline-flex';
                 cameraMessage.style.display = 'none';
@@ -276,6 +366,8 @@
                 stream.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
                 stream = null;
+        canvas.style.display = 'none';
+        video.style.display = 'block';
             }
             startButton.textContent = '카메라 켜기';
             switchButton.style.display = 'none';
@@ -288,10 +380,6 @@
 
         // 사진 촬영
         function capturePhoto() {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-
             capturedPhoto.src = canvas.toDataURL('image/jpeg');
             capturedPhoto.style.display = 'block';
             downloadButton.style.display = 'inline-flex';

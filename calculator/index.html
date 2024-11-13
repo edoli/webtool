@@ -72,8 +72,8 @@
             display: none;
         }
 
-        #formula-minus-button.show {
-            display: block;
+        :has(#formula-container > :nth-child(2)) #formula-minus-button {
+            display: block; /* 또는 flex, inline-block 등 원하는 display 값 */
         }
 
         #formula-minus-button:hover {
@@ -323,21 +323,12 @@
                 formulaContainer.removeChild(lastFormula.formulaBlock);
                 formulas.pop();
                 updateVariableInputs();
-                
-                if (formulas.length === 1) {
-                    formulaMinusButton.classList.remove("show");
-                    return;
-                }
             }
         });
 
         formulaAddButton.addEventListener('click', () => {
             createFormulaBlock();
             updateVariableInputs();
-            
-            if (formulas.length > 1) {
-                formulaMinusButton.classList.add("show");
-            }
         });
 
         variablesContainer.addEventListener('input', (e) => {

@@ -25,6 +25,7 @@
 
         #canvas {
             display: none;
+            width: 100%;
         }
 
         .camera-message {
@@ -366,8 +367,8 @@
                 stream.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
                 stream = null;
-        canvas.style.display = 'none';
-        video.style.display = 'block';
+                canvas.style.display = 'none';
+                video.style.display = 'block';
             }
             startButton.textContent = '카메라 켜기';
             switchButton.style.display = 'none';

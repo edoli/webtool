@@ -1,11 +1,12 @@
-const CACHE_NAME = 'edoli-webtool-v1';
-const urlsToCache = [
-  './',
-  './style.css',
-  './script.js',
-  './icon-192x192.png',
-  './icon-512x512.png',
-];
+const CACHE_NAME = 'edoli-webtool-dev';
+// const urlsToCache = [
+//   './',
+//   './style.css',
+//   './script.js',
+//   './icon-192x192.png',
+//   './icon-512x512.png',
+// ];
+const urlsToCache = [];
 
 self.addEventListener('install', event => {
   event.waitUntil(

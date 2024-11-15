@@ -1,9 +1,10 @@
 const CACHE_NAME = 'edoli-webtool-v1';
 const urlsToCache = [
-  '/',
-  '/style.css',
-  '/script.js',
-  // 캐시할 다른 리소스들 추가
+  './',
+  './style.css',
+  './script.js',
+  './icon-192x192.png',
+  './icon-512x512.png',
 ];
 
 self.addEventListener('install', event => {

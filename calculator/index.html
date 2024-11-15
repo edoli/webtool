@@ -2,32 +2,14 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Formula Calculator</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding-top: 1.5em;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 42rem;
-            padding: 1.5em;
-        }
-
         .card-content {
             display: flex;
             flex-direction: column;
-            gap: 1.5em;
+            gap: var(--spacing-medium);
         }
 
         #formula-container {
@@ -118,7 +100,7 @@
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="card-container">
         <div class="card-content">
             <div id="formula-container">
             </div>

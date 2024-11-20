@@ -4,43 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Manager</title>
+    <link rel="stylesheet" href="../style.css">
     <style>
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2ecc71;
-            --background-color: #f5f6fa;
-            --border-color: #dcdde1;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--background-color);
-            padding: 20px;
-        }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        .dropzone {
-            border: 2px dashed var(--primary-color);
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 20px;
-            background-color: white;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .dropzone.dragover {
-            background-color: rgba(52, 152, 219, 0.1);
         }
 
         .or-separator {
@@ -146,12 +115,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="dropzone" id="dropzone">
-            <h2>PDF 파일이 있는 폴더를 여기에 드래그하세요</h2>
-            <p>또는</p>
-            <div class="file-picker">
-                <button class="btn" id="folderPicker">폴더 선택</button>
-            </div>
+        <div class="drop-area" id="dropzone">
+            <h2 style="margin:0;">PDF 파일이 있는 폴더를 여기에 드래그하거나 폴더를 선택하세요</h2>
         </div>
 
         <div class="tags-panel">
@@ -177,6 +142,7 @@
         </div>
     </div>
 
+    <script src="../script.js"></script>
     <script>
         class PDFManager {
             constructor() {
@@ -203,30 +169,38 @@
                     e.preventDefault();
                     dropzone.classList.remove('dragover');
                     
-                    // 폴더의 핸들을 가져옵니다
+                    // 드래그된 아이템들을 확인
                     const items = e.dataTransfer.items;
                     for (let item of items) {
-                        if (item.kind === 'file') {
-                            const entry = item.webkitGetAsEntry();
-                            if (entry.isDirectory) {
-                                await this.processDirectory(entry);
+                        // FileSystemHandle API를 지원하는 경우
+                        if (item.kind === 'file' && typeof item.getAsFileSystemHandle === 'function') {
+                            const handle = await item.getAsFileSystemHandle();
+
+                            if (handle.kind === 'directory') {
+                                this.directoryHandle = handle;
+                                await this.processDirectory(handle);
+                                
+                                try {
+                                    await this.loadDatabase(handle);
+                                } catch (error) {
+                                    console.error('DB 파일 로드 및 생성에 실패했습니다.', error);
+                                }
                             }
                         }
                     }
                 });
 
                 // 폴더 선택 버튼
-                document.getElementById('folderPicker').addEventListener('click', () => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.webkitdirectory = true;
-                    
-                    input.addEventListener('change', async (e) => {
-                        const files = Array.from(e.target.files);
-                        await this.processFolderSelection(files);
-                    });
-                    
-                    input.click();
+                document.getElementById('dropzone').addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    try {
+                        const handle = await window.showDirectoryPicker();
+                        this.directoryHandle = handle;
+                        await this.processDirectory(handle);
+                        await this.loadDatabase();
+                    } catch (error) {
+                        console.error('폴더 선택 중 오류 발생:', error);
+                    }
                 });
 
                 // 정렬 변경 이벤트
@@ -240,55 +214,18 @@
                 });
             }
 
-            async processDirectory(directoryEntry) {
+            async processDirectory(directoryEntry, isRoot = true) {
                 try {
                     // directoryEntry가 FileSystemDirectoryHandle인 경우
-                    console.log(directoryEntry);
                     if (directoryEntry.kind === 'directory') {
-                        this.directoryHandle = directoryEntry;
                         for await (const entry of directoryEntry.values()) {
                             if (entry.kind === 'file') {
                                 if (entry.name.toLowerCase().endsWith('.pdf')) {
                                     const file = await entry.getFile();
                                     this.addPDFFile(file);
-                                } else if (entry.name === this.dbFile) {
-                                    await this.loadDatabase(entry);
                                 }
                             } else if (entry.kind === 'directory') {
-                                await this.processDirectory(entry);
-                            }
-                        }
-                    } 
-                    // 이전 방식의 DirectoryEntry 처리 (드래그앤드롭)
-                    else {
-                        // 처음 폴더가 드롭된 경우에만 권한 요청
-                        if (!this.directoryHandle) {
-                            try {
-                                const dirHandle = await window.showDirectoryPicker();
-                                this.directoryHandle = dirHandle;
-                            } catch (error) {
-                                console.error('폴더 접근 권한을 얻지 못했습니다:', error);
-                                return;
-                            }
-                        }
-
-                        const reader = directoryEntry.createReader();
-                        const entries = await new Promise((resolve) => {
-                            reader.readEntries(resolve);
-                        });
-
-                        for (let entry of entries) {
-                            if (entry.isFile) {
-                                if (entry.name.toLowerCase().endsWith('.pdf')) {
-                                    const file = await new Promise((resolve) => {
-                                        entry.file(resolve);
-                                    });
-                                    this.addPDFFile(file);
-                                } else if (entry.name === this.dbFile) {
-                                    await this.loadDatabase(entry);
-                                }
-                            } else if (entry.isDirectory) {
-                                await this.processDirectory(entry);
+                                await this.processDirectory(entry, false);  // 하위 폴더는 isRoot = false
                             }
                         }
                     }
@@ -297,39 +234,23 @@
                 }
             }
 
-            async processFolderSelection(files) {
-                try {
-                    // 폴더 선택기를 통해 디렉토리 핸들 획득
-                    const dirHandle = await window.showDirectoryPicker();
-                    this.directoryHandle = dirHandle;
-
-                    const dbFile = files.find(file => file.name === this.dbFile);
-                    if (dbFile) {
-                        await this.loadDatabase(dbFile);
-                    }
-
-                    const pdfFiles = files.filter(file => 
-                        file.name.toLowerCase().endsWith('.pdf')
-                    );
-                    
-                    pdfFiles.forEach(file => this.addPDFFile(file));
-                } catch (error) {
-                    console.error('폴더 선택 중 오류 발생:', error);
+            async loadDatabase() {
+                if (!this.directoryHandle) {
+                    console.error('로드할 디렉토리가 선택되지 않았습니다.');
+                    return;
                 }
-            }
 
-            async loadDatabase(fileEntry) {
                 try {
-                    const file = await new Promise((resolve) => {
-                        fileEntry.file(resolve);
-                    });
+                    const fileHandle = await this.directoryHandle.getFileHandle(this.dbFile);
+                    const file = await fileHandle.getFile();
                     const text = await file.text();
+
                     const data = JSON.parse(text);
                     
                     // DB에서 태그 정보를 복원합니다
                     this.tags = new Set(data.tags || []);
                     this.renderTags();
-                    
+
                     // PDF 메타데이터를 복원합니다
                     if (data.pdfs) {
                         this.pdfFiles.forEach(pdf => {
@@ -339,8 +260,10 @@
                             }
                         });
                     }
+
+                    this.renderPDFs();
                 } catch (error) {
-                    console.log('새로운 데이터베이스를 생성합니다.');
+                    console.log('새로운 데이터베이스를 생성합니다.', error);
                     this.saveDatabase();
                 }
             }

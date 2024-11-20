@@ -115,6 +115,11 @@
   white-space: nowrap;
 }
 
+.pdf-name a {
+  text-decoration: none;
+  color: color-mix(in srgb, var(--primary-color) 80%, black);
+}
+
 .pdf-tags {
   display: flex;
   gap: 5px;

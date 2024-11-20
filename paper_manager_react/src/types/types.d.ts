@@ -1,6 +1,7 @@
 interface PDFFile {
   name: string;
   path?: string;
+  file: File,
   lastModified: number;
   tags: Set<string>;
   selected?: boolean;

@@ -98,6 +98,7 @@ const App: React.FC = () => {
         name: file.name,
         path: file.webkitRelativePath || undefined,
         lastModified: file.lastModified,
+        file: file,
         tags: new Set()
       }
     ]);

@@ -48,7 +48,11 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag 
         <div className="custom-checkbox-mark"></div>
       </div>
       <div className="pdf-info">
-        <div className="pdf-name">{pdf.name}</div>
+        <div className="pdf-name">
+          <a href={URL.createObjectURL(pdf.file)} target="_blank" rel="noopener noreferrer">
+            {pdf.name}
+          </a>
+        </div>
         <div className="pdf-tags">
           {Array.from(pdf.tags).map(tag => (
             <span key={tag} className="tag">

@@ -10,12 +10,11 @@ const App: React.FC = () => {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
   const [tags, setTags] = useState<Set<string>>(new Set());
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
-  const [saveTime, setSaveTime] = useState('');
+  const [shouldSave, setShouldSave] = useState(0);
   const DB_FILE = '.epmg.json';
 
   const trySaveDatabase = () => {
-    const now = new Date();
-    setSaveTime(now.toLocaleTimeString());
+    setShouldSave(shouldSave + 1);
   };
 
   const processDirectory = async (handle: FileSystemDirectoryHandle) => {
@@ -102,7 +101,6 @@ const App: React.FC = () => {
         tags: new Set()
       }
     ]);
-    trySaveDatabase();
   };
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -227,7 +225,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     saveDatabase();
-  }, [saveTime]);
+  }, [shouldSave]);
 
   return (
     <div className="container">

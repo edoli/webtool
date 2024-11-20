@@ -15,4 +15,4 @@ interface DatabaseStructure {
   };
 }
 
-type SortMethod = 'date' | 'name';
+type SortMethod = 'date' | 'name' | 'date_reverse' | 'name_reverse';

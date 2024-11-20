@@ -129,10 +129,18 @@ const App: React.FC = () => {
   const sortPDFs = (method: SortMethod) => {
     setPdfFiles(prev =>
       [...prev].sort((a, b) => {
-        if (method === 'date') {
-          return b.lastModified - a.lastModified;
+        switch (method) {
+          case 'date':
+            return b.lastModified - a.lastModified;
+          case 'date_reverse':
+            return a.lastModified - b.lastModified;
+          case 'name':
+            return a.name.localeCompare(b.name);
+          case 'name_reverse':
+            return b.name.localeCompare(a.name);
+          default:
+            return 0;
         }
-        return a.name.localeCompare(b.name);
       })
     );
     trySaveDatabase();

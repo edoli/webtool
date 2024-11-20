@@ -61,7 +61,7 @@
 
 .pdf-item {
   display: flex;
-  align-items: center;
+  align-items: start;
   padding: 10px;
   border: 1px solid var(--border-color);
   margin-bottom: 10px;
@@ -79,10 +79,19 @@
 
 .pdf-checkbox {
   margin-right: 10px;
+  
 }
 
 .pdf-info {
   flex-grow: 1;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.pdf-info .pdf-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pdf-tags {
@@ -154,4 +163,53 @@
   padding: 2px 8px;
   margin: 2px;
   cursor: move;
+}
+
+.custom-checkbox-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-checkbox {
+  position: absolute;
+  opacity: 0;
+  border: none;
+  cursor: pointer;
+  height: 100%;
+  width: 100%;
+}
+
+.custom-checkbox-mark {
+  height: 20px;
+  width: 20px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.custom-checkbox:checked + .custom-checkbox-mark {
+  background-color: #2196F3;
+}
+
+.custom-checkbox-mark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 30%;
+  top: 8%;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox:checked + .custom-checkbox-mark:after {
+  display: block;
+}
+
+.custom-checkbox:focus + .custom-checkbox-mark {
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
 }

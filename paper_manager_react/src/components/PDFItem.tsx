@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 interface PDFItemProps {
   pdf: PDFFile;
-  onSelect: (selected: boolean) => void;
+  onSelect: (selected: boolean, shiftKey: boolean) => void;
   onAddTag: (pdfName: string, tag: string) => void;
   onRemoveTag: (pdfName: string, tag: string) => void;
 }
@@ -38,14 +38,17 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag 
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <input
-        type="checkbox"
-        className="pdf-checkbox"
-        checked={pdf.selected || false}
-        onChange={(e) => onSelect(e.target.checked)}
-      />
+      <div className="custom-checkbox-wrapper pdf-checkbox">
+        <input
+          type="checkbox"
+          className="custom-checkbox"
+          checked={pdf.selected || false}
+          onChange={(e) => onSelect(e.target.checked, e.nativeEvent.shiftKey)}
+        />
+        <div className="custom-checkbox-mark"></div>
+      </div>
       <div className="pdf-info">
-        <div>{pdf.name}</div>
+        <div className="pdf-name">{pdf.name}</div>
         <div className="pdf-tags">
           {Array.from(pdf.tags).map(tag => (
             <span key={tag} className="tag">

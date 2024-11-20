@@ -29,7 +29,7 @@ const PDFList: React.FC<PDFListProps> = ({
         return [...tags, ...pdf.tags];
       }
       return tags;
-    }, [])
+    }, ["None"])
   )];
 
   const handleTagFilter = (tag: string) => {
@@ -43,7 +43,7 @@ const PDFList: React.FC<PDFListProps> = ({
 
   const filteredPdfFiles = pdfFiles.filter(pdf => {
     if (selectedTags.length === 0) return true;
-    return selectedTags.every(tag => pdf.tags?.has(tag));
+    return selectedTags.every(tag => tag === "None" ? pdf.tags?.size === 0 : pdf.tags?.has(tag));
   });
 
   const handleSelect = (index: number, selected: boolean, shiftKey: boolean) => {

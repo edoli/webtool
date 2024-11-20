@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # React 프로젝트 빌드
+      - name: Install and Build React
+        run: |
+          cd paper_manager_react
+          npm install
+          npm run build
+        env:
+          CI: false  # 경고를 에러로 처리하지 않도록 설정
+
+      # 빌드된 파일을 paper_manager 디렉토리로 이동 후 react 폴더 삭제
+      - name: Move build files
+        run: |
+          rm -rf paper_manager
+          mv paper_manager_react/build paper_manager
+          rm -rf paper_manager_react
+
+      # GitHub Pages에 배포
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          force_orphan: true

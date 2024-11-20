@@ -43,7 +43,7 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag 
           type="checkbox"
           className="custom-checkbox"
           checked={pdf.selected || false}
-          onChange={(e) => onSelect(e.target.checked, e.nativeEvent.shiftKey)}
+          onChange={(e) => onSelect(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey)}
         />
         <div className="custom-checkbox-mark"></div>
       </div>

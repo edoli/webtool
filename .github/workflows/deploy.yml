@@ -31,7 +31,7 @@ jobs:
       - name: Move build files
         run: |
           rm -rf paper_manager
-          mv paper_manager_react/build paper_manager
+          mv paper_manager_react/dist paper_manager
           rm -rf paper_manager_react
 
       # GitHub Pages에 배포

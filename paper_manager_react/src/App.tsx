@@ -179,6 +179,29 @@ const App: React.FC = () => {
     saveDatabase();
   };
 
+  const removeTagCompletely = (tagToRemove: string) => {
+    // PDF들에서 해당 태그 제거
+    setPdfFiles(prev =>
+      prev.map(pdf => {
+        const newTags = new Set(pdf.tags);
+        newTags.delete(tagToRemove);
+        return {
+          ...pdf,
+          tags: newTags
+        };
+      })
+    );
+
+    // 태그 목록에서 제거
+    setTags(prev => {
+      const newTags = new Set(prev);
+      newTags.delete(tagToRemove);
+      return newTags;
+    });
+
+    saveDatabase();
+  };
+
   // 디렉토리가 설정되었을때 호출
   useEffect(() => {
     if (directoryHandle) {
@@ -198,13 +221,17 @@ const App: React.FC = () => {
   return (
     <div className="container">
       <DropZone onDrop={handleDrop} onClick={handleDirectorySelect} />
-      <TagsPanel tags={tags} />
+      <TagsPanel 
+        tags={tags} 
+        onRemoveTag={removeTagCompletely}
+      />
       <PDFList
         pdfFiles={pdfFiles}
         setPdfFiles={setPdfFiles}
         onSort={sortPDFs}
         onAddTags={addTagsToSelected}
         onAddTag={addTagToPDF}
+        onRemoveTag={removeTagFromPDF}
       />
     </div>
   );
@@ -239,11 +266,18 @@ const DropZone: React.FC<DropZoneProps> = ({ onDrop, onClick }) => {
 
 interface TagsPanelProps {
   tags: Set<string>;
+  onRemoveTag: (tag: string) => void;
 }
 
-const TagsPanel: React.FC<TagsPanelProps> = ({ tags }) => {
+const TagsPanel: React.FC<TagsPanelProps> = ({ tags, onRemoveTag }) => {
   const handleDragStart = (e: React.DragEvent, tag: string) => {
     e.dataTransfer.setData('text/plain', tag);
+  };
+
+  const handleRemoveClick = (tag: string) => {
+    if (window.confirm(`정말로 "${tag}" 태그를 완전히 삭제하시겠습니까? 이 작업은 모든 PDF에서 해당 태그를 제거합니다.`)) {
+      onRemoveTag(tag);
+    }
   };
 
   return (
@@ -257,7 +291,14 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ tags }) => {
             draggable
             onDragStart={(e) => handleDragStart(e, tag)}
           >
-            {tag}
+            <span>{tag}</span>
+            <button
+              className="remove-tag-btn"
+              onClick={() => handleRemoveClick(tag)}
+              title="태그 삭제"
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
@@ -272,9 +313,17 @@ interface PDFListProps {
   onSort: (method: SortMethod) => void;
   onAddTags: () => void;
   onAddTag: (pdfName: string, tag: string) => void;
+  onRemoveTag: (pdfName: string, tag: string) => void;
 }
 
-const PDFList: React.FC<PDFListProps> = ({ pdfFiles, setPdfFiles, onSort, onAddTags, onAddTag }) => {
+const PDFList: React.FC<PDFListProps> = ({ 
+  pdfFiles, 
+  setPdfFiles, 
+  onSort, 
+  onAddTags, 
+  onAddTag,
+  onRemoveTag 
+}) => {
   return (
     <div className="pdf-list">
       <div className="controls">
@@ -299,6 +348,7 @@ const PDFList: React.FC<PDFListProps> = ({ pdfFiles, setPdfFiles, onSort, onAddT
               );
             }}
             onAddTag={onAddTag}
+            onRemoveTag={onRemoveTag}
           />
         ))}
       </div>
@@ -310,9 +360,10 @@ interface PDFItemProps {
   pdf: PDFFile;
   onSelect: (selected: boolean) => void;
   onAddTag: (pdfName: string, tag: string) => void;
+  onRemoveTag: (pdfName: string, tag: string) => void;
 }
 
-const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag }) => {
+const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -351,7 +402,16 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag }) => {
         <div>{pdf.name}</div>
         <div className="pdf-tags">
           {Array.from(pdf.tags).map(tag => (
-            <span key={tag} className="tag">{tag}</span>
+            <span key={tag} className="tag">
+              {tag}
+              <button
+                className="remove-tag-btn"
+                onClick={() => onRemoveTag(pdf.name, tag)}
+                title="태그 제거"
+              >
+                ×
+              </button>
+            </span>
           ))}
         </div>
       </div>

@@ -5,10 +5,31 @@
   --border-color: #dee2e6;
 }
 
-.container {
-  max-width: 1200px;
+.container-full {
+  max-width: 100%;
   margin: 0 auto;
   padding: 20px;
+}
+
+.container-column {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.main-panel {
+  flex-grow: 1;
+  max-width: calc(100% - 328px); /* 320px for side-panel width + 8px for gap */
+}
+
+.side-panel {
+  position: sticky;
+  top: 8px;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  flex-shrink: 0;
 }
 
 .drop-area {

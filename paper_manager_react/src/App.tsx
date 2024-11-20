@@ -236,20 +236,27 @@ const App: React.FC = () => {
   }, [shouldSave]);
 
   return (
-    <div className="container">
+    <div className="container-full">
       <DropZone onDrop={handleDrop} onClick={handleDirectorySelect} />
-      <TagsPanel
-        tags={tags}
-        onRemoveTag={removeTagCompletely}
-      />
-      <PDFList
-        pdfFiles={pdfFiles}
-        setPdfFiles={setPdfFiles}
-        onSort={sortPDFs}
-        onAddTags={addTagsToSelected}
-        onAddTag={addTagToPDF}
-        onRemoveTag={removeTagFromPDF}
-      />
+      <div className="container-column">
+        <div className="main-panel">
+
+          <PDFList
+            pdfFiles={pdfFiles}
+            setPdfFiles={setPdfFiles}
+            onSort={sortPDFs}
+            onAddTags={addTagsToSelected}
+            onAddTag={addTagToPDF}
+            onRemoveTag={removeTagFromPDF}
+          />
+        </div>
+        <div className="side-panel">
+          <TagsPanel
+            tags={tags}
+            onRemoveTag={removeTagCompletely}
+          />
+        </div>
+      </div>
     </div>
   );
 };

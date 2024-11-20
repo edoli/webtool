@@ -234,3 +234,33 @@
 .custom-checkbox:focus + .custom-checkbox-mark {
   box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
 }
+
+.tag-filters {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.tag-filter {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-filter.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.tag-filter:hover {
+  background: #e9ecef;
+}
+
+.tag-filter.active:hover {
+  background: #0056b3;
+}

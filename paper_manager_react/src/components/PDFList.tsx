@@ -20,6 +20,31 @@ const PDFList: React.FC<PDFListProps> = ({
 }) => {
   // Add state to track last checked item index
   const [lastCheckedIndex, setLastCheckedIndex] = useState<number | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  // Get unique tags from all PDFs
+  const allTags = [...new Set(
+    pdfFiles.reduce<string[]>((tags, pdf) => {
+      if (pdf.tags) {
+        return [...tags, ...pdf.tags];
+      }
+      return tags;
+    }, [])
+  )];
+
+  const handleTagFilter = (tag: string) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag);
+      }
+      return [...prev, tag];
+    });
+  };
+
+  const filteredPdfFiles = pdfFiles.filter(pdf => {
+    if (selectedTags.length === 0) return true;
+    return selectedTags.every(tag => pdf.tags?.has(tag));
+  });
 
   const handleSelect = (index: number, selected: boolean, shiftKey: boolean) => {
     if (shiftKey && lastCheckedIndex !== null) {
@@ -61,11 +86,22 @@ const PDFList: React.FC<PDFListProps> = ({
             <option value="name_reverse">이름순 (내림차순)</option>
           </select>
         </div>
+        <div className="tag-filters">
+          {allTags.map(tag => (
+            <button 
+              key={tag}
+              className={`tag-filter ${selectedTags.includes(tag) ? 'active' : ''}`}
+              onClick={() => handleTagFilter(tag)}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
         <button className="btn" onClick={onAddTags}>선택한 PDF에 태그 추가</button>
         <button className="btn" onClick={onDeselectAll}>모두 선택 해제</button>
       </div>
       <div>
-        {pdfFiles.map((pdf, index) => (
+        {filteredPdfFiles.map((pdf, index) => (
           <PDFItem
             key={pdf.name}
             pdf={pdf}

@@ -264,3 +264,12 @@
 .pdf-info-panel p {
   font-size: smaller;  
 }
+
+.pdf-info-panel textarea {
+  resize: vertical;
+  font-family: inherit;
+  border: none;
+  background-color: var(--background-color);
+  border-radius: 4px;
+  padding: 6px;
+}

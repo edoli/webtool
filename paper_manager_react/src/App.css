@@ -33,6 +33,18 @@
   flex-shrink: 0;
 }
 
+.side-panel-item {
+  background-color: white;
+  border-radius: 8px;
+  padding: var(--spacing-medium);
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.side-panel-item h3 {
+  margin-bottom: var(--spacing-small);
+}
+
 /* Common */
 .btn {
   padding: 10px 20px;
@@ -226,14 +238,6 @@
   font-size: 12px;
 }
 
-.tags-panel {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 .tags-container {
   display: flex;
   flex-wrap: wrap;
@@ -255,51 +259,8 @@
   color: #ff0000;
 }
 
-.custom-checkbox-wrapper {
-  position: relative;
-  display: inline-block;
-}
+/* PDF Info Panel */
 
-.custom-checkbox {
-  position: absolute;
-  opacity: 0;
-  border: none;
-  cursor: pointer;
-  height: 100%;
-  width: 100%;
-}
-
-.custom-checkbox-mark {
-  height: 20px;
-  width: 20px;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  pointer-events: none;
-}
-
-.custom-checkbox:checked + .custom-checkbox-mark {
-  background-color: #2196F3;
-}
-
-.custom-checkbox-mark:after {
-  content: "";
-  position: absolute;
-  display: none;
-  left: 30%;
-  top: 8%;
-  width: 5px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.custom-checkbox:checked + .custom-checkbox-mark:after {
-  display: block;
-}
-
-.custom-checkbox:focus + .custom-checkbox-mark {
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+.pdf-info-panel p {
+  font-size: smaller;  
 }

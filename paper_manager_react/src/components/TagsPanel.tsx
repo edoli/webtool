@@ -18,7 +18,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ tags, onRemoveTag }) => {
   };
 
   return (
-    <div className="tags-panel">
+    <div className="tags-panel side-panel-item">
       <h3>태그</h3>
       <div className="tags-container">
         {Object.keys(tags).map(tag => (

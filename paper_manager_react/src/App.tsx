@@ -5,6 +5,7 @@ import '../../style.css';
 import DropZone from './components/DropZone';
 import TagsPanel from './components/TagsPanel';
 import PDFList from './components/PDFList';
+import PDFInfoPanel from './components/PDFInfoPanel';
 
 const App: React.FC = () => {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
@@ -12,6 +13,8 @@ const App: React.FC = () => {
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [shouldSave, setShouldSave] = useState(0);
   const DB_FILE = '.epmg.json';
+
+  const selectedPDFs = pdfFiles.filter(pdf => pdf.selected);
 
   const trySaveDatabase = () => {
     setShouldSave(prev => prev + 1);
@@ -266,6 +269,7 @@ const App: React.FC = () => {
             tags={tags}
             onRemoveTag={removeTagCompletely}
           />
+          {selectedPDFs.length === 1 && <PDFInfoPanel pdfFile={selectedPDFs[0]} />}
         </div>
       </div>
     </div>

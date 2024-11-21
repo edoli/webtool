@@ -4,7 +4,7 @@ import Tag from './Tag'; // Tag 컴포넌트 임포트
 interface PDFItemProps {
   pdf: PDFFile;
   tags: Tags;
-  onSelect: (selected: boolean, shiftKey: boolean) => void;
+  onSelect: (selected: boolean, shiftKey: boolean, ctrlKey: boolean) => void;
   onAddTag: (pdfName: string, tag: string) => void;
   onRemoveTag: (pdfName: string, tag: string) => void;
 }
@@ -39,7 +39,7 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, tags, onSelect, onAddTag, onRemo
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onMouseDown={(e) => (e.nativeEvent as MouseEvent).shiftKey ? e.preventDefault() : null}
+      onMouseDown={(e) => e.shiftKey ? e.preventDefault() : null}
       onClick={(e) => {
         const isTextSelected = () => {
           const selection = window.getSelection();
@@ -47,7 +47,7 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, tags, onSelect, onAddTag, onRemo
         };
 
         if (e.target === e.currentTarget && !isTextSelected()) {
-          onSelect(!pdf.selected, (e.nativeEvent as MouseEvent).shiftKey);
+          onSelect(!pdf.selected, e.shiftKey, e.ctrlKey);
         }
       }}
     >

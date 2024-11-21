@@ -52,7 +52,7 @@ const PDFList: React.FC<PDFListProps> = ({
     filteredPdfFiles.includes(pdf) ? filteredPdfFiles.indexOf(pdf) : -1
   );
 
-  const handleSelect = (index: number, selected: boolean, shiftKey: boolean) => {
+  const handleSelect = (index: number, selected: boolean, shiftKey: boolean, ctrlKey: boolean) => {
     if (shiftKey && lastCheckedIndex !== null) {
       const start = Math.min(lastCheckedIndex, index);
       const end = Math.max(lastCheckedIndex, index);
@@ -63,11 +63,18 @@ const PDFList: React.FC<PDFListProps> = ({
           return fi !== -1 && fi >= start && fi <= end ? { ...pdf, selected } : pdf;
         })
       );
-    } else {
+    } else if (ctrlKey) {
       setPdfFiles(prev => 
         prev.map((pdf, i) => {
           const fi = filteredIndices[i];
           return fi === index ? { ...pdf, selected } : pdf;
+        })
+      );
+    } else {
+      setPdfFiles(prev => 
+        prev.map((pdf, i) => {
+          const fi = filteredIndices[i];
+          return fi === index ? { ...pdf, selected } : { ...pdf, selected: false };
         })
       );
     }
@@ -117,7 +124,7 @@ const PDFList: React.FC<PDFListProps> = ({
             key={pdf.name}
             pdf={pdf}
             tags={tags}
-            onSelect={(selected, shiftKey) => handleSelect(index, selected, shiftKey)}
+            onSelect={(selected, shiftKey, ctrlKey) => handleSelect(index, selected, shiftKey, ctrlKey)}
             onAddTag={onAddTag}
             onRemoveTag={onRemoveTag}
           />

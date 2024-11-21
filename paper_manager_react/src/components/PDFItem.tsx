@@ -35,20 +35,22 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, tags, onSelect, onAddTag, onRemo
 
   return (
     <div 
-      className={`pdf-item ${isDragOver ? 'dragover' : ''}`}
+      className={`pdf-item ${isDragOver ? 'dragover' : ''} ${pdf.selected ? 'selected' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onMouseDown={(e) => (e.nativeEvent as MouseEvent).shiftKey ? e.preventDefault() : null}
+      onClick={(e) => {
+        const isTextSelected = () => {
+          const selection = window.getSelection();
+          return selection && selection.toString().trim().length > 0;
+        };
+
+        if (e.target === e.currentTarget && !isTextSelected()) {
+          onSelect(!pdf.selected, (e.nativeEvent as MouseEvent).shiftKey);
+        }
+      }}
     >
-      <div className="custom-checkbox-wrapper pdf-checkbox">
-        <input
-          type="checkbox"
-          className="custom-checkbox"
-          checked={pdf.selected || false}
-          onChange={(e) => onSelect(e.target.checked, (e.nativeEvent as MouseEvent).shiftKey)}
-        />
-        <div className="custom-checkbox-mark"></div>
-      </div>
       <div className="pdf-info">
         <div className="pdf-name">
           <a href={URL.createObjectURL(pdf.file)} target="_blank" rel="noopener noreferrer">
@@ -66,6 +68,7 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, tags, onSelect, onAddTag, onRemo
           ))}
         </div>
       </div>
+      <div className="selection-indicator"></div>
     </div>
   );
 };

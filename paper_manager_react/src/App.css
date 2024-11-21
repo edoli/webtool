@@ -126,15 +126,51 @@
 /* PDF Item */
 .pdf-item {
   display: flex;
+  position: relative;
   align-items: start;
   padding: 10px;
   border: 1px solid var(--border-color);
   margin-bottom: 10px;
   border-radius: 4px;
+  transition: var(--default-transition);
+  cursor: pointer;
 }
 
 .pdf-item:hover {
   background-color: #f8f9fa;
+}
+
+.pdf-item.selected {
+  background: linear-gradient(to right, #f0f7ff, #e6f0fd);
+  border-left: 4px solid #3b82f6;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.selection-indicator {
+  position: absolute;
+  right: 12px;
+  top: 0;
+  height: 100%;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  transform: translateX(8px);
+  transition: var(--default-transition);
+  pointer-events: none;
+}
+
+.selection-indicator::after {
+  content: '';
+  width: 4px;
+  height: 60%;
+  border-radius: 9999px;
+  background-color: #3b82f6;
+}
+
+.pdf-item.selected .selection-indicator {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .pdf-item.dragover {
@@ -148,26 +184,36 @@
 }
 
 .pdf-info {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
   flex-grow: 1;
   max-width: 100%;
   overflow: hidden;
+  pointer-events: none;
 }
 
 .pdf-info .pdf-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  pointer-events: auto;
 }
 
 .pdf-name a {
   text-decoration: none;
   color: color-mix(in srgb, var(--primary-color) 80%, black);
 }
+.pdf-name a:hover {
+  color: var(--primary-color);
+}
 
 .pdf-tags {
   display: flex;
   gap: 5px;
   margin-top: 5px;
+  cursor: initial;
+  pointer-events: auto;
 }
 
 /* Tags */

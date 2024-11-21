@@ -23,7 +23,7 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ tags, onRemoveTag }) => {
         {Array.from(tags).map(tag => (
           <div
             key={tag}
-            className="draggable-tag"
+            className="tag draggable"
             draggable
             onDragStart={(e) => handleDragStart(e, tag)}
           >

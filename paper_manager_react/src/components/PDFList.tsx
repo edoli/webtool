@@ -77,7 +77,7 @@ const PDFList: React.FC<PDFListProps> = ({
 
   return (
     <div className="pdf-list">
-      <div className="controls">
+      <div className="pdf-list-controls">
         <div className="sort-controls">
           <select onChange={(e) => onSort(e.target.value as SortMethod)}>
             <option value="date">날짜순 (오름차순)</option>
@@ -97,8 +97,11 @@ const PDFList: React.FC<PDFListProps> = ({
             </button>
           ))}
         </div>
-        <button className="btn" onClick={onAddTags}>선택한 PDF에 태그 추가</button>
-        <button className="btn" onClick={onDeselectAll}>모두 선택 해제</button>
+        <div className="flex-1"></div>
+        <div className="pdf-list-control-buttons">
+          <div className="button" onClick={onAddTags}>태그 추가</div>
+          <div className="button" onClick={onDeselectAll}>선택 해제</div>
+        </div>
       </div>
       <div>
         {filteredPdfFiles.map((pdf, index) => (

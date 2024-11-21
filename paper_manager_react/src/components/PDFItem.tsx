@@ -54,7 +54,7 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag 
           </a>
         </div>
         <div className="pdf-tags">
-          {Array.from(pdf.tags).map(tag => (
+          {Array.from(pdf.tags).sort().map(tag => (
             <span key={tag} className="tag">
               {tag}
               <button

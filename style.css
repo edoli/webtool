@@ -2,7 +2,7 @@
 :root {
   --primary-color: #3498db;
   --negative-color: #db3455;
-  --secondary-color: #2d9e31;
+  --secondary-color: #2ecc71;
   --text-color: #333;
   --text-dim-color: #acacac;
   --background-color: #f0f0f0;
@@ -113,10 +113,10 @@ ul {
 
 /* common */
 .button {
-  display: inline-block;
-  margin-top: var(--spacing-small);
+  display: inline-flex;
   padding: var(--spacing-thin) var(--spacing-small);
   background-color: var(--primary-color);
+  align-items: center;
   color: white;
   text-decoration: none;
   border-radius: var(--border-radius);
@@ -133,12 +133,12 @@ ul {
 }
 
 .button-outline {
-  display: inline-block;
-  margin-top: var(--spacing-small);
+  display: inline-flex;
   padding: var(--spacing-thin) var(--spacing-small);
   color: var(--text-color);
   border: 1px solid var(--border-color);
   background-color: var(--hover-color);
+  align-items: center;
   text-decoration: none;
   border-radius: var(--border-radius);
   cursor: pointer;

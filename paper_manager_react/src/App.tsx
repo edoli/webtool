@@ -23,7 +23,8 @@ const App: React.FC = () => {
       for await (const entry of entries) {
         if (entry.kind === 'file') {
           if (entry.name.toLowerCase().endsWith('.pdf')) {
-            const file = await (entry as FileSystemFileHandle).getFile();
+            const fileHandle = (entry as FileSystemFileHandle);
+            const file = await fileHandle.getFile();
             addPDFFile(file);
           }
         } else if (entry.kind === 'directory') {

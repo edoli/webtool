@@ -47,21 +47,28 @@ const PDFList: React.FC<PDFListProps> = ({
     return selectedTags.every(tag => tag === "None" ? pdf.tags?.size === 0 : pdf.tags?.has(tag));
   });
 
+  // filteredPdfFiles의 인덱스를 역으로 매핑
+  const filteredIndices = pdfFiles.map((pdf) => 
+    filteredPdfFiles.includes(pdf) ? filteredPdfFiles.indexOf(pdf) : -1
+  );
+
   const handleSelect = (index: number, selected: boolean, shiftKey: boolean) => {
     if (shiftKey && lastCheckedIndex !== null) {
       const start = Math.min(lastCheckedIndex, index);
       const end = Math.max(lastCheckedIndex, index);
-      
+
       setPdfFiles(prev => 
-        prev.map((pdf, i) => 
-          i >= start && i <= end ? { ...pdf, selected } : pdf
-        )
+        prev.map((pdf, i) => {
+          const fi = filteredIndices[i];
+          return fi !== -1 && fi >= start && fi <= end ? { ...pdf, selected } : pdf;
+        })
       );
     } else {
-      setPdfFiles(prev =>
-        prev.map((p, i) =>
-          i === index ? { ...p, selected } : p
-        )
+      setPdfFiles(prev => 
+        prev.map((pdf, i) => {
+          const fi = filteredIndices[i];
+          return fi === index ? { ...pdf, selected } : pdf;
+        })
       );
     }
     setLastCheckedIndex(index);

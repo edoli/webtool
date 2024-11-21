@@ -1,5 +1,6 @@
 // App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import _ from 'lodash';
 import './App.css';
 import '../../style.css';
 import DropZone from './components/DropZone';
@@ -16,9 +17,9 @@ const App: React.FC = () => {
 
   const selectedPDFs = pdfFiles.filter(pdf => pdf.selected);
 
-  const trySaveDatabase = () => {
+  const trySaveDatabase = useCallback(_.debounce(() => {
     setShouldSave(prev => prev + 1);
-  };
+  }, 1000), []);
 
   const processDirectory = async (handle: FileSystemDirectoryHandle) => {
     try {
@@ -56,7 +57,8 @@ const App: React.FC = () => {
       setPdfFiles(prev =>
         prev.map(pdf => ({
           ...pdf,
-          tags: new Set(data.pdfs[pdf.name]?.tags || [])
+          tags: new Set(data.pdfs[pdf.name]?.tags || []),
+          note: data.pdfs[pdf.name].note || ""
         }))
       );
     } catch (error) {
@@ -273,7 +275,7 @@ const App: React.FC = () => {
           {selectedPDFs.length === 1 && 
             <PDFInfoPanel 
               pdfFile={selectedPDFs[0]}
-              onChange={trySaveDatabase()} />}
+              onChange={trySaveDatabase} />}
         </div>
       </div>
     </div>

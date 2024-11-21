@@ -8,13 +8,13 @@ import PDFList from './components/PDFList';
 
 const App: React.FC = () => {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
-  const [tags, setTags] = useState<Set<string>>(new Set());
+  const [tags, setTags] = useState<Tags>({});
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [shouldSave, setShouldSave] = useState(0);
   const DB_FILE = '.epmg.json';
 
   const trySaveDatabase = () => {
-    setShouldSave(shouldSave + 1);
+    setShouldSave(prev => prev + 1);
   };
 
   const processDirectory = async (handle: FileSystemDirectoryHandle) => {
@@ -48,7 +48,7 @@ const App: React.FC = () => {
       const text = await file.text();
       const data: DatabaseStructure = JSON.parse(text);
 
-      setTags(new Set(data.tags));
+      setTags(data.tags);
 
       setPdfFiles(prev =>
         prev.map(pdf => ({
@@ -67,7 +67,7 @@ const App: React.FC = () => {
 
     try {
       const data: DatabaseStructure = {
-        tags: Array.from(tags),
+        tags: tags,
         pdfs: {}
       };
 
@@ -152,7 +152,13 @@ const App: React.FC = () => {
     const tag = prompt('추가할 태그를 입력하세요:');
     if (!tag) return;
 
-    setTags(prev => new Set([...prev, tag]));
+    // 새로운 태그인 경우 태그 정보 추가
+    if (!tags[tag]) {
+      setTags(prev => ({
+        ...prev,
+        [tag]: { colorIndex: Object.keys(tags).length }
+      }));
+    }
 
     setPdfFiles(prev =>
       prev.map(pdf => ({
@@ -164,6 +170,11 @@ const App: React.FC = () => {
   };
 
   const addTagToPDF = (pdfName: string, tag: string) => {
+    // 존재하지 않는 태그인 경우 무시
+    if (!tags[tag]) {
+      return;
+    }
+
     setPdfFiles(prev =>
       prev.map(pdf => {
         if (pdf.name === pdfName) {
@@ -210,20 +221,18 @@ const App: React.FC = () => {
 
     // 태그 목록에서 제거
     setTags(prev => {
-      const newTags = new Set(prev);
-      newTags.delete(tagToRemove);
+      const newTags = { ...prev };
+      delete newTags[tagToRemove];
       return newTags;
     });
 
     trySaveDatabase();
   };
 
-  // 디렉토리가 설정되었을때 호출
   useEffect(() => {
     if (directoryHandle) {
-      // clear previous data
       setPdfFiles([]);
-      setTags(new Set());
+      setTags({});
 
       const init = async () => {
         await processDirectory(directoryHandle);
@@ -242,9 +251,9 @@ const App: React.FC = () => {
       <DropZone onDrop={handleDrop} onClick={handleDirectorySelect} />
       <div className="container-column">
         <div className="main-panel">
-
           <PDFList
             pdfFiles={pdfFiles}
+            tags={tags}
             setPdfFiles={setPdfFiles}
             onSort={sortPDFs}
             onAddTags={addTagsToSelected}

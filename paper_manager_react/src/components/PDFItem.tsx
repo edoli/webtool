@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import Tag from './Tag'; // Tag 컴포넌트 임포트
 
 interface PDFItemProps {
   pdf: PDFFile;
+  tags: Tags;
   onSelect: (selected: boolean, shiftKey: boolean) => void;
   onAddTag: (pdfName: string, tag: string) => void;
   onRemoveTag: (pdfName: string, tag: string) => void;
 }
 
-const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag }) => {
+const PDFItem: React.FC<PDFItemProps> = ({ pdf, tags, onSelect, onAddTag, onRemoveTag }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -55,16 +57,12 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, onSelect, onAddTag, onRemoveTag 
         </div>
         <div className="pdf-tags">
           {Array.from(pdf.tags).sort().map(tag => (
-            <span key={tag} className="tag">
-              {tag}
-              <button
-                className="remove-tag-btn"
-                onClick={() => onRemoveTag(pdf.name, tag)}
-                title="태그 제거"
-              >
-                ×
-              </button>
-            </span>
+            <Tag 
+              key={tag}
+              tag={tag}
+              colorIndex={tags[tag]?.colorIndex}
+              onRemove={() => onRemoveTag(pdf.name, tag)}
+            />
           ))}
         </div>
       </div>

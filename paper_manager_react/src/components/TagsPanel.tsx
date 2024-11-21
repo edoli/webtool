@@ -1,7 +1,8 @@
 import React from 'react';
+import Tag from './Tag';
 
 interface TagsPanelProps {
-  tags: Set<string>;
+  tags: Tags;
   onRemoveTag: (tag: string) => void;
 }
 
@@ -20,22 +21,15 @@ const TagsPanel: React.FC<TagsPanelProps> = ({ tags, onRemoveTag }) => {
     <div className="tags-panel">
       <h3>태그</h3>
       <div className="tags-container">
-        {Array.from(tags).map(tag => (
-          <div
+        {Object.keys(tags).map(tag => (
+          <Tag 
             key={tag}
-            className="tag draggable"
-            draggable
+            tag={tag}
+            colorIndex={tags[tag]?.colorIndex}
+            onRemove={() => handleRemoveClick(tag)}
             onDragStart={(e) => handleDragStart(e, tag)}
-          >
-            <span>{tag}</span>
-            <button
-              className="remove-tag-btn"
-              onClick={() => handleRemoveClick(tag)}
-              title="태그 삭제"
-            >
-              ×
-            </button>
-          </div>
+            draggable={true}
+          />
         ))}
       </div>
     </div>

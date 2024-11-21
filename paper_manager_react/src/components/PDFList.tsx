@@ -3,6 +3,7 @@ import PDFItem from './PDFItem';
 
 interface PDFListProps {
   pdfFiles: PDFFile[];
+  tags: Tags;  // 전체 태그 정보를 props로 받음
   setPdfFiles: React.Dispatch<React.SetStateAction<PDFFile[]>>;
   onSort: (method: SortMethod) => void;
   onAddTags: () => void;
@@ -12,23 +13,23 @@ interface PDFListProps {
 
 const PDFList: React.FC<PDFListProps> = ({ 
   pdfFiles, 
+  tags,
   setPdfFiles, 
   onSort, 
   onAddTags, 
   onAddTag,
   onRemoveTag 
 }) => {
-  // Add state to track last checked item index
   const [lastCheckedIndex, setLastCheckedIndex] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   // Get unique tags from all PDFs
   const allTags = [...new Set(
-    pdfFiles.reduce<string[]>((tags, pdf) => {
+    pdfFiles.reduce<string[]>((acc, pdf) => {
       if (pdf.tags) {
-        return [...tags, ...pdf.tags];
+        return [...acc, ...pdf.tags];
       }
-      return tags;
+      return acc;
     }, ["None"])
   )];
 
@@ -65,7 +66,7 @@ const PDFList: React.FC<PDFListProps> = ({
     }
     setLastCheckedIndex(index);
   };
-    
+
   const onDeselectAll = () => {
     setPdfFiles(prev =>
       prev.map(pdf => ({
@@ -108,6 +109,7 @@ const PDFList: React.FC<PDFListProps> = ({
           <PDFItem
             key={pdf.name}
             pdf={pdf}
+            tags={tags}
             onSelect={(selected, shiftKey) => handleSelect(index, selected, shiftKey)}
             onAddTag={onAddTag}
             onRemoveTag={onRemoveTag}

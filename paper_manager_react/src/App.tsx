@@ -76,7 +76,8 @@ const App: React.FC = () => {
 
       pdfFiles.forEach(pdf => {
         data.pdfs[pdf.name] = {
-          tags: Array.from(pdf.tags)
+          tags: Array.from(pdf.tags),
+          note: pdf.note || "",
         };
       });
 
@@ -269,7 +270,10 @@ const App: React.FC = () => {
             tags={tags}
             onRemoveTag={removeTagCompletely}
           />
-          {selectedPDFs.length === 1 && <PDFInfoPanel pdfFile={selectedPDFs[0]} />}
+          {selectedPDFs.length === 1 && 
+            <PDFInfoPanel 
+              pdfFile={selectedPDFs[0]}
+              onChange={trySaveDatabase()} />}
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ interface Tags {
 
 interface PDFInfo {
   tags: string[];
+  note: string;
 }
 
 interface PDFs {
@@ -21,6 +22,7 @@ interface PDFFile {
   lastModified: number;
   tags: Set<string>;
   selected?: boolean;
+  note?: string;
 }
 
 interface DatabaseStructure {

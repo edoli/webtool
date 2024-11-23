@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Manager</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .or-separator {
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+        }
+
+        .file-picker {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .pdf-list {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .sort-controls select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .pdf-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .pdf-checkbox {
+            margin-right: 10px;
+        }
+
+        .pdf-info {
+            flex-grow: 1;
+        }
+
+        .pdf-tags {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .tag {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .tags-panel {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .draggable-tag {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="drop-area" id="dropzone">
+            <h2 style="margin:0;">PDF 파일이 있는 폴더를 여기에 드래그하거나 폴더를 선택하세요</h2>
+        </div>
+
+        <div class="tags-panel">
+            <h3>태그</h3>
+            <div class="tags-container" id="tagsContainer">
+                <!-- 태그들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+
+        <div class="pdf-list">
+            <div class="controls">
+                <div class="sort-controls">
+                    <select id="sortSelect">
+                        <option value="date">날짜순</option>
+                        <option value="name">이름순</option>
+                    </select>
+                </div>
+                <button class="btn" id="addTagsBtn">선택한 PDF에 태그 추가</button>
+            </div>
+            <div id="pdfContainer">
+                <!-- PDF 항목들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../script.js"></script>
+    <script>
+        class PDFManager {
+            constructor() {
+                this.pdfFiles = [];
+                this.tags = new Set();
+                this.dbFile = '.epmg.json';
+                this.directoryHandle = null; // 폴더 핸들을 저장
+                this.initializeListeners();
+            }
+
+            initializeListeners() {
+                // 드래그 앤 드롭 이벤트
+                const dropzone = document.getElementById('dropzone');
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('dragover');
+                });
+
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('dragover');
+                });
+
+                dropzone.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                    
+                    // 드래그된 아이템들을 확인
+                    const items = e.dataTransfer.items;
+                    for (let item of items) {
+                        // FileSystemHandle API를 지원하는 경우
+                        if (item.kind === 'file' && typeof item.getAsFileSystemHandle === 'function') {
+                            const handle = await item.getAsFileSystemHandle();
+
+                            if (handle.kind === 'directory') {
+                                this.directoryHandle = handle;
+                                await this.processDirectory(handle);
+                                
+                                try {
+                                    await this.loadDatabase(handle);
+                                } catch (error) {
+                                    console.error('DB 파일 로드 및 생성에 실패했습니다.', error);
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 폴더 선택 버튼
+                document.getElementById('dropzone').addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    try {
+                        const handle = await window.showDirectoryPicker();
+                        this.directoryHandle = handle;
+                        await this.processDirectory(handle);
+                        await this.loadDatabase();
+                    } catch (error) {
+                        console.error('폴더 선택 중 오류 발생:', error);
+                    }
+                });
+
+                // 정렬 변경 이벤트
+                document.getElementById('sortSelect').addEventListener('change', (e) => {
+                    this.sortPDFs(e.target.value);
+                });
+
+                // 태그 추가 버튼
+                document.getElementById('addTagsBtn').addEventListener('click', () => {
+                    this.addTagsToSelected();
+                });
+            }
+
+            async processDirectory(directoryEntry, isRoot = true) {
+                try {
+                    // directoryEntry가 FileSystemDirectoryHandle인 경우
+                    if (directoryEntry.kind === 'directory') {
+                        for await (const entry of directoryEntry.values()) {
+                            if (entry.kind === 'file') {
+                                if (entry.name.toLowerCase().endsWith('.pdf')) {
+                                    const file = await entry.getFile();
+                                    this.addPDFFile(file);
+                                }
+                            } else if (entry.kind === 'directory') {
+                                await this.processDirectory(entry, false);  // 하위 폴더는 isRoot = false
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('디렉토리 처리 중 오류 발생:', error);
+                }
+            }
+
+            async loadDatabase() {
+                if (!this.directoryHandle) {
+                    console.error('로드할 디렉토리가 선택되지 않았습니다.');
+                    return;
+                }
+
+                try {
+                    const fileHandle = await this.directoryHandle.getFileHandle(this.dbFile);
+                    const file = await fileHandle.getFile();
+                    const text = await file.text();
+
+                    const data = JSON.parse(text);
+                    
+                    // DB에서 태그 정보를 복원합니다
+                    this.tags = new Set(data.tags || []);
+                    this.renderTags();
+
+                    // PDF 메타데이터를 복원합니다
+                    if (data.pdfs) {
+                        this.pdfFiles.forEach(pdf => {
+                            const metadata = data.pdfs[pdf.name];
+                            if (metadata) {
+                                pdf.tags = new Set(metadata.tags || []);
+                            }
+                        });
+                    }
+
+                    this.renderPDFs();
+                } catch (error) {
+                    console.log('새로운 데이터베이스를 생성합니다.', error);
+                    this.saveDatabase();
+                }
+            }
+
+            async saveDatabase() {
+                if (!this.directoryHandle) {
+                    console.error('저장할 디렉토리가 선택되지 않았습니다.');
+                    return;
+                }
+
+                try {
+                    const data = {
+                        tags: Array.from(this.tags),
+                        pdfs: {}
+                    };
+
+                    this.pdfFiles.forEach(pdf => {
+                        data.pdfs[pdf.name] = {
+                            tags: Array.from(pdf.tags || new Set())
+                        };
+                    });
+
+                    // .epmg.json 파일에 대한 핸들 가져오기
+                    let fileHandle;
+                    try {
+                        fileHandle = await this.directoryHandle.getFileHandle(this.dbFile);
+                    } catch {
+                        fileHandle = await this.directoryHandle.getFileHandle(this.dbFile, { create: true });
+                    }
+
+                    // 파일 쓰기
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(JSON.stringify(data, null, 2));
+                    await writable.close();
+                } catch (error) {
+                    console.error('데이터베이스 저장 중 오류 발생:', error);
+                }
+            }
+
+            addPDFFile(file) {
+                const pdfInfo = {
+                    name: file.name,
+                    path: file.path,
+                    lastModified: file.lastModified,
+                    tags: new Set()
+                };
+
+                this.pdfFiles.push(pdfInfo);
+                this.renderPDFs();
+            }
+
+            sortPDFs(method) {
+                this.pdfFiles.sort((a, b) => {
+                    if (method === 'date') {
+                        return b.lastModified - a.lastModified;
+                    } else if (method === 'name') {
+                        return a.name.localeCompare(b.name);
+                    }
+                });
+                this.renderPDFs();
+            }
+
+            renderPDFs() {
+                const container = document.getElementById('pdfContainer');
+                container.innerHTML = '';
+
+                this.pdfFiles.forEach(pdf => {
+                    const element = document.createElement('div');
+                    element.className = 'pdf-item';
+                    element.innerHTML = `
+                        <input type="checkbox" class="pdf-checkbox">
+                        <div class="pdf-info">
+                            <div>${pdf.name}</div>
+                            <div class="pdf-tags">
+                                ${Array.from(pdf.tags).map(tag => 
+                                    `<span class="tag">${tag}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+
+                    element.querySelector('.pdf-checkbox').addEventListener('change', (e) => {
+                        pdf.selected = e.target.checked;
+                    });
+
+                    container.appendChild(element);
+                });
+            }
+
+            renderTags() {
+                const container = document.getElementById('tagsContainer');
+                container.innerHTML = '';
+
+                this.tags.forEach(tag => {
+                    const element = document.createElement('div');
+                    element.className = 'draggable-tag';
+                    element.draggable = true;
+                    element.textContent = tag;
+
+                    element.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', tag);
+                    });
+
+                    container.appendChild(element);
+                });
+            }
+
+            addTagsToSelected() {
+                const tag = prompt('추가할 태그를 입력하세요:');
+                if (!tag) return;
+
+                this.tags.add(tag);
+                this.renderTags();
+
+                const selectedPDFs = this.pdfFiles.filter(pdf => pdf.selected);
+                selectedPDFs.forEach(pdf => {
+                    pdf.tags.add(tag);
+                });
+
+                this.renderPDFs();
+                this.saveDatabase();
+            }
+        }
+
+        // 애플리케이션 초기화
+        const app = new PDFManager();
+    </script>
+</body>
+</html>

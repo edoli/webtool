@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXR File Loader</title>
+    <style>
+        /* 기존 스타일 유지 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            background: #f0f0f0;
+        }
+
+        .drop-zone.drag-over {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+        }
+
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .load-time {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: inline-block;
+            width: 100px;
+            margin-right: 10px;
+        }
+
+        .control-group input {
+            width: 200px;
+        }
+
+        .control-value {
+            display: inline-block;
+            width: 50px;
+            text-align: right;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="dropZone" class="drop-zone">
+            <p>Drop your EXR file here or click to select</p>
+            <input type="file" id="fileInput" accept=".exr" class="hidden">
+        </div>
+
+        <div id="previewContainer"></div>
+
+        <div id="controls" class="controls">
+            <div class="control-group">
+                <label for="brightness">Brightness:</label>
+                <input type="range" id="brightness" min="-1" max="1" step="0.1" value="0">
+                <span id="brightnessValue" class="control-value">0</span>
+            </div>
+            <div class="control-group">
+                <label for="exposure">Exposure:</label>
+                <input type="range" id="exposure" min="0.1" max="4" step="0.1" value="1">
+                <span id="exposureValue" class="control-value">1</span>
+            </div>
+            <div class="control-group">
+                <label for="gamma">Gamma:</label>
+                <input type="range" id="gamma" min="0.1" max="4" step="0.1" value="2.2">
+                <span id="gammaValue" class="control-value">2.2</span>
+            </div>
+        </div>
+        
+        <div id="loadTime" class="load-time"></div>
+        <div id="infoPanel" class="info-panel">
+            <h3>Image Information</h3>
+            <div id="imageInfo"></div>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gpu.js@2.16/dist/gpu-browser.min.js"></script>
+    <script src="./exr-wrap.js"></script>
+    <script>
+        let exrLoader;
+        let currentImage = null;
+        const gpu = new GPU.GPU();
+
+        EXR().then((loader) => exrLoader = loader);
+
+        
+        gpu.addNativeFunction('process', `vec3 process(vec3 rgb, float brightness, float exposure, float gamma) {
+            vec3 result = rgb + brightness;        // 밝기 조정
+            result *= exposure;                    // 노출 조정
+            result = pow(result, vec3(1.0 / gamma)); // 감마 보정
+            
+            return clamp(result, vec3(0.0), vec3(1.0));
+        }`);
+
+        const packRGB = gpu.createKernel(function(r, g, b) {
+            const i = this.thread.y * this.output.x + this.thread.x;
+            return [r[i], g[i], b[i]];
+        }).setPipeline(true).setDynamicOutput(true);
+
+        // GPU kernel for image processing with combined RGB array
+        const processImageKernel = gpu.createKernel(function(pixels, width, brightness, exposure, gamma) {
+            const x = this.thread.x;
+            const y = this.thread.y;
+            const pixelIndex = (y * width + x);  // Each pixel has 3 components (R,G,B)
+            
+            const pixel = pixels[pixelIndex];
+            
+            const final = process(pixel, brightness, exposure, gamma);
+
+            this.color(final[0], final[1], final[2], 1);
+        }).setGraphical(true).setDynamicOutput(true);
+        
+        document.getElementById('previewContainer').appendChild(processImageKernel.canvas);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const loadTimeDiv = document.getElementById('loadTime');
+            const infoPanel = document.getElementById('infoPanel');
+            const imageInfo = document.getElementById('imageInfo');
+            const errorMessage = document.getElementById('errorMessage');
+            const controls = document.getElementById('controls');
+
+            // Control elements
+            const brightnessInput = document.getElementById('brightness');
+            const exposureInput = document.getElementById('exposure');
+            const gammaInput = document.getElementById('gamma');
+            const brightnessValue = document.getElementById('brightnessValue');
+            const exposureValue = document.getElementById('exposureValue');
+            const gammaValue = document.getElementById('gammaValue');
+
+            // Update values display
+            function updateValueDisplay(input, display) {
+                display.textContent = input.value;
+            }
+
+            // Add input event listeners
+            brightnessInput.addEventListener('input', () => {
+                updateValueDisplay(brightnessInput, brightnessValue);
+                updateImage();
+            });
+            exposureInput.addEventListener('input', () => {
+                updateValueDisplay(exposureInput, exposureValue);
+                updateImage();
+            });
+            gammaInput.addEventListener('input', () => {
+                updateValueDisplay(gammaInput, gammaValue);
+                updateImage();
+            });
+
+            // Initialize value displays
+            updateValueDisplay(brightnessInput, brightnessValue);
+            updateValueDisplay(exposureInput, exposureValue);
+            updateValueDisplay(gammaInput, gammaValue);
+
+            function updateImage() {
+                if (!currentImage) return;
+
+                const brightness = parseFloat(brightnessInput.value);
+                const exposure = parseFloat(exposureInput.value);
+                const gamma = parseFloat(gammaInput.value);
+
+                const startTime = performance.now(); // Start timing
+
+                processImageKernel(
+                    currentImage.pixels,
+                    currentImage.width,
+                    brightness,
+                    exposure,
+                    gamma
+                );
+
+                const endTime = performance.now(); // End timing
+                const updateTime = endTime - startTime;
+
+                console.log(`Update image time: ${updateTime.toFixed(2)}ms`);
+            }
+
+            // Handle drag and drop events
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            // Handle click to select file
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            async function handleFile(file) {
+                // Reset previous state
+                errorMessage.style.display = 'none';
+                infoPanel.style.display = 'none';
+                controls.style.display = 'none';
+                loadTimeDiv.textContent = '';
+                currentImage = null;
+
+                if (!file.name.toLowerCase().endsWith('.exr')) {
+                    showError('Please select an EXR file.');
+                    return;
+                }
+
+                try {
+                    const startTime = performance.now();
+
+                    // Read file as ArrayBuffer
+                    const arrayBuffer = await file.arrayBuffer();
+                    const data = new Uint8Array(arrayBuffer);
+
+                    const exrImage = exrLoader.loadEXRStr(data.buffer);
+
+                    if (exrImage) {
+                        const channels = exrImage.channels();
+                        const channelsList = Array.from({ length: channels.length }, (_, i) => channels[i]);
+                        
+                        if (channelsList.includes('R') && channelsList.includes('G') && channelsList.includes('B')) {
+                            const width = exrImage.width;
+                            const height = exrImage.height;
+                            const totalPixels = width * height;
+                            
+                            // Create a combined RGB array
+                            const pixels = new Float32Array(totalPixels * 3);
+                            const rPlane = exrImage.plane('R');
+                            const gPlane = exrImage.plane('G');
+                            const bPlane = exrImage.plane('B');
+                            
+                            // Combine RGB channels into a single array
+                            // for (let i = 0; i < totalPixels; i++) {
+                            //     pixels[i] = [rPlane[i], gPlane[i], bPlane[i]];
+                            // }
+
+                            // Initialize GPU kernel with image dimensions
+                            packRGB.setOutput([width, height]);
+                            processImageKernel.setOutput([width, height]);
+
+                            // Store the current image data
+                            currentImage = {
+                                width: width,
+                                height: height,
+                                pixels: packRGB(rPlane, gPlane, bPlane)
+                            };
+                            
+                            // Display initial image
+                            controls.style.display = 'block';
+                            updateImage();
+                        }
+                    }
+
+                    const endTime = performance.now();
+                    const loadTime = endTime - startTime;
+
+                    // Display results
+                    loadTimeDiv.textContent = `Load time: ${loadTime.toFixed(2)}ms`;
+                    infoPanel.style.display = 'block';
+
+                } catch (err) {
+                    showError(`Error loading EXR file: ${err.message}`);
+                    console.error('Error:', err);
+                }
+            }
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

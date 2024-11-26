@@ -7,7 +7,7 @@ import { ImageData, ControlValues } from './types';
 import './style.css';
 
 export const DataViewer: React.FC = () => {
-  const [imageData, setImageData] = useState<ImageData | null>(null);
+  const [imageData, setImageData] = useState<ImageData | undefined>(undefined);
   const [controls, setControls] = useState<ControlValues>({
     brightness: 0,
     exposure: 1,
@@ -31,27 +31,27 @@ export const DataViewer: React.FC = () => {
 
   return (
     <div className="container">
-      <DropZone onFileSelect={handleFileSelect} />
       
       {error && (
         <div className="error-message">{error}</div>
       )}
 
-      {imageData && (
-        <>
-          <ImagePreview imageData={imageData} controls={controls} />
-          
-          <Controls values={controls} onChange={setControls} />
-          
-          <div className="info-panel">
-            <h3>Image Information</h3>
-            <div className="image-info">
-              <p>Width: {imageData.width}px</p>
-              <p>Height: {imageData.height}px</p>
-            </div>
+      <div className="main-container">
+        <ImagePreview imageData={imageData} controls={controls} />
+        <DropZone onFileSelect={handleFileSelect} />
+      </div>
+      
+      <div className="sidebar">
+        <Controls values={controls} onChange={setControls} />
+        
+        <div className="info-panel">
+          <h3>Image Information</h3>
+          <div className="image-info">
+            <p>Width: {imageData?.width}px</p>
+            <p>Height: {imageData?.height}px</p>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

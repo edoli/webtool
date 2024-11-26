@@ -18,7 +18,7 @@ export const Controls: React.FC<ControlsProps> = ({ values, onChange }) => {
   return (
     <div className="controls">
       <div className="control-group">
-        <label>Brightness:</label>
+        <label>B:</label>
         <input
           type="range"
           name="brightness"
@@ -32,7 +32,7 @@ export const Controls: React.FC<ControlsProps> = ({ values, onChange }) => {
       </div>
 
       <div className="control-group">
-        <label>Exposure:</label>
+        <label>E:</label>
         <input
           type="range"
           name="exposure"
@@ -46,7 +46,7 @@ export const Controls: React.FC<ControlsProps> = ({ values, onChange }) => {
       </div>
 
       <div className="control-group">
-        <label>Gamma:</label>
+        <label>G:</label>
         <input
           type="range"
           name="gamma"

@@ -3,7 +3,7 @@ import { ImageData, ControlValues } from './types';
 import { gpuContext } from './GPUContext';
 
 interface ImagePreviewProps {
-  imageData: ImageData;
+  imageData?: ImageData;
   controls: ControlValues;
 }
 
@@ -11,10 +11,6 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ imageData, controls 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!imageData) return;
-    
-    const startTime = performance.now();
-    
     const processImageKernel = gpuContext.processImageKernel;
     const canvas = processImageKernel.canvas;
 
@@ -25,6 +21,10 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ imageData, controls 
       }
       container.appendChild(canvas);
     }
+    
+    if (!imageData) return;
+    
+    const startTime = performance.now();
     processImageKernel.setOutput([imageData.width, imageData.height]);
 
     processImageKernel(

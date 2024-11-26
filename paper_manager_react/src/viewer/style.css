@@ -1,16 +1,33 @@
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  display: flex;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.main-container {
+  flex-grow: 1;
+  position: relative;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
 }
 
 .drop-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+
   border: 2px dashed #ccc;
   border-radius: 4px;
   padding: 20px;
   text-align: center;
   cursor: pointer;
-  margin-bottom: 20px;
+  opacity: 0;
 }
 
 .drop-zone:hover {
@@ -18,44 +35,46 @@
 }
 
 .drop-zone.drag-over {
-    background: #e8f0fe;
-    border-color: #1a73e8;
+  opacity: 1.0;
+  background: #e8f0fe;
+  border-color: #1a73e8;
 }
 
 .preview-container {
-  margin: 20px 0;
   text-align: center;
 }
 
-.preview-canvas {
+.preview-container canvas {
   max-width: 100%;
   height: auto;
 }
 
+/* Controls */
+
 .controls {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
   background: #f5f5f5;
-  padding: 20px;
   border-radius: 4px;
-  margin: 20px 0;
+  gap: 8px;
 }
 
 .control-group {
-  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
 }
-
 .control-group label {
-  display: block;
-  margin-bottom: 5px;
+  width: 24px;
 }
 
-.control-group input[type="range"] {
-  width: 100%;
+.control-group input {
+
 }
 
 .control-value {
-  display: inline-block;
-  margin-left: 10px;
-  min-width: 40px;
+  padding-left: 4px;
+  width: 32px;
 }
 
 .info-panel {
@@ -73,43 +92,4 @@
   border-radius: 4px;
   margin-top: 10px;
   display: none;
-}
-
-.hidden {
-  display: none;
-}
-
-canvas {
-  max-width: 100%;
-  margin-top: 20px;
-  border: 1px solid #ddd;
-}
-
-.controls {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  /* display: none; */
-}
-
-.control-group {
-  margin-bottom: 15px;
-}
-
-.control-group label {
-  display: inline-block;
-  width: 100px;
-  margin-right: 10px;
-}
-
-.control-group input {
-  width: 200px;
-}
-
-.control-value {
-  display: inline-block;
-  width: 50px;
-  text-align: right;
-  margin-left: 10px;
 }

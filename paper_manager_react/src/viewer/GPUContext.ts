@@ -3,6 +3,7 @@ import { GPU, IKernelRunShortcut } from 'gpu.js';
 class GPUContext {
   public repackData!: IKernelRunShortcut;
   public packRGB!: IKernelRunShortcut;
+  public permuteRGB!: IKernelRunShortcut;
   public processImageKernel!: IKernelRunShortcut;
 
   constructor() {
@@ -42,6 +43,39 @@ class GPUContext {
     this.packRGB = gpu.createKernel(function(r: number[], g: number[], b: number[]) {
       const i = this.thread.y * this.output.x + this.thread.x;
       return [r[i], g[i], b[i]];
+    }, {
+      pipeline: true,
+      dynamicOutput: true,
+    });
+
+    this.permuteRGB = gpu.createKernel(function(data: number[], permute: number[], dimension: number[], dim: number) {
+      let yIndex = 0;
+      let xIndex = 0;
+      let colorIndexOffset = 0;
+      let accumDim = 1;
+
+      const p0 = permute[0];
+      const p1 = permute[1];
+      const p2 = permute[2];
+
+      for (let j = dim - 1; j >= 0; j--) {
+        if (j === p0) {
+          yIndex = this.thread.y * accumDim;
+        } else if (j === p1) {
+          xIndex = this.thread.x * accumDim;
+        } else if (j === p2) {
+          colorIndexOffset = accumDim;
+        }
+
+        accumDim *= dimension[j];
+      }
+
+      const baseIndex = yIndex + xIndex;
+      const rIndex = baseIndex;
+      const gIndex = baseIndex + colorIndexOffset;
+      const bIndex = baseIndex + colorIndexOffset * 2;
+
+      return [data[rIndex], data[gIndex], data[bIndex]];
     }, {
       pipeline: true,
       dynamicOutput: true,

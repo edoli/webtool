@@ -25,6 +25,7 @@ export const DataViewer: React.FC = () => {
         setError('Failed to load image data');
       }
     } catch (err) {
+      console.error(err);
       setError((err as Error).message);
     }
   }, []);

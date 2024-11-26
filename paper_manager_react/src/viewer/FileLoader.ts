@@ -1,6 +1,7 @@
 
 import { ImageData } from './types.js';
 import { gpuContext } from './GPUContext.js';
+import npyjs from "npyjs";
 import { exr } from './exr-wrap.js';
 
 type ImageLoader = (file: File) => Promise<ImageData | undefined>;
@@ -23,6 +24,10 @@ class FileLoader {
       case 'gif':
       case 'webp':
         loader = this.loadImage;
+        break;
+      case 'npy':
+      case 'np':
+        loader = this.loadNPY;
         break;
       default:
         throw new Error('Unsupported file format');
@@ -105,6 +110,29 @@ class FileLoader {
       }
     }
     return undefined;
+  }
+
+  loadNPY: ImageLoader = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const npyReader = new npyjs();
+    const npyData = await npyReader.load(arrayBuffer);
+
+    if (npyData && npyData.shape.length === 3) {
+      const [, height, width] = npyData.shape;
+      
+      const permuteRGB = gpuContext.permuteRGB;
+      permuteRGB.setOutput([width, height]);
+
+      const imageData: ImageData = {
+        width,
+        height,
+        pixels: permuteRGB(npyData.data as any, [1, 2, 0], npyData.shape, npyData.shape.length)
+      };
+      
+      return imageData;
+    }
+    return undefined;
+
   }
 }
 

@@ -18,12 +18,15 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ imageData, controls 
     const processImageKernel = gpuContext.processImageKernel;
     const canvas = processImageKernel.canvas;
 
-    if (!canvasContainerRef.current?.contains(canvas)) {
-      canvasContainerRef.current?.appendChild(canvas);
+    const container = canvasContainerRef.current;
+    if (container && !container.contains(canvas)) {
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      container.appendChild(canvas);
     }
-    
     processImageKernel.setOutput([imageData.width, imageData.height]);
-    
+
     processImageKernel(
       imageData.pixels,
       imageData.width,

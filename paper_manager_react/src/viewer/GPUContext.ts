@@ -1,20 +1,16 @@
 import { GPU, IKernelRunShortcut } from 'gpu.js';
 
 class GPUContext {
-  private gpu: GPU;
-  private cpu: GPU;
   public repackData!: IKernelRunShortcut;
   public packRGB!: IKernelRunShortcut;
   public processImageKernel!: IKernelRunShortcut;
 
   constructor() {
-    this.gpu = new GPU();
-    this.cpu = new GPU({ mode: 'cpu' });
     this.initializeKernels();
   }
 
-  private initializeKernels() {
-    const gpu = this.gpu;
+  public initializeKernels() {
+    const gpu = new GPU();
 
     gpu.addNativeFunction('process', `vec3 process(vec3 rgb, float brightness, float exposure, float gamma) {
       vec3 result = rgb + brightness;
@@ -38,12 +34,18 @@ class GPUContext {
       const i = (this.thread.y * this.output.x + this.thread.x);
       const t = (this as any).float32ToVec4(data[i]);
       return [t[0] * scale, t[1] * scale, t[2] * scale];
-    }).setPipeline(true).setDynamicOutput(true);
+    }, {
+      pipeline: true,
+      dynamicOutput: true,
+    });
 
     this.packRGB = gpu.createKernel(function(r: number[], g: number[], b: number[]) {
       const i = this.thread.y * this.output.x + this.thread.x;
       return [r[i], g[i], b[i]];
-    }).setPipeline(true).setDynamicOutput(true);
+    }, {
+      pipeline: true,
+      dynamicOutput: true,
+    });
 
     this.processImageKernel = gpu.createKernel(function(
       pixels: number[][],
@@ -58,7 +60,10 @@ class GPUContext {
       const pixel = pixels[y][x];
       const final = (this as any).process(pixel, brightness, exposure, gamma);
       this.color(final[0], final[1], final[2], 1.0);
-    }).setGraphical(true).setDynamicOutput(true);
+    }, {
+      graphical: true,
+      dynamicOutput: true,
+    });
   }
 }
 

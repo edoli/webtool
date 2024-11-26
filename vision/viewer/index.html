@@ -116,18 +116,18 @@
         <div id="controls" class="controls">
             <div class="control-group">
                 <label for="brightness">Brightness:</label>
-                <input type="range" id="brightness" min="-1" max="1" step="0.1" value="0">
+                <input type="range" id="brightness" min="-1" max="1" step="0.01" value="0">
                 <span id="brightnessValue" class="control-value">0</span>
             </div>
             <div class="control-group">
                 <label for="exposure">Exposure:</label>
-                <input type="range" id="exposure" min="0.1" max="4" step="0.1" value="1">
+                <input type="range" id="exposure" min="0.01" max="4" step="0.01" value="1">
                 <span id="exposureValue" class="control-value">1</span>
             </div>
             <div class="control-group">
                 <label for="gamma">Gamma:</label>
-                <input type="range" id="gamma" min="0.1" max="4" step="0.1" value="2.2">
-                <span id="gammaValue" class="control-value">2.2</span>
+                <input type="range" id="gamma" min="0.1" max="4" step="0.01" value="1.0">
+                <span id="gammaValue" class="control-value">1.0</span>
             </div>
         </div>
         
@@ -142,39 +142,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/gpu.js@2.16/dist/gpu-browser.min.js"></script>
     <script src="./exr-wrap.js"></script>
+    <script src="./kernels.js"></script>
+    <script src="./loader.js"></script>
     <script>
         let exrLoader;
         let currentImage = null;
-        const gpu = new GPU.GPU();
 
         EXR().then((loader) => exrLoader = loader);
-
-        
-        gpu.addNativeFunction('process', `vec3 process(vec3 rgb, float brightness, float exposure, float gamma) {
-            vec3 result = rgb + brightness;        // 밝기 조정
-            result *= exposure;                    // 노출 조정
-            result = pow(result, vec3(1.0 / gamma)); // 감마 보정
-            
-            return clamp(result, vec3(0.0), vec3(1.0));
-        }`);
-
-        const packRGB = gpu.createKernel(function(r, g, b) {
-            const i = this.thread.y * this.output.x + this.thread.x;
-            return [r[i], g[i], b[i]];
-        }).setPipeline(true).setDynamicOutput(true);
-
-        // GPU kernel for image processing with combined RGB array
-        const processImageKernel = gpu.createKernel(function(pixels, width, brightness, exposure, gamma) {
-            const x = this.thread.x;
-            const y = this.thread.y;
-            const pixelIndex = (y * width + x);  // Each pixel has 3 components (R,G,B)
-            
-            const pixel = pixels[pixelIndex];
-            
-            const final = process(pixel, brightness, exposure, gamma);
-
-            this.color(final[0], final[1], final[2], 1);
-        }).setGraphical(true).setDynamicOutput(true);
         
         document.getElementById('previewContainer').appendChild(processImageKernel.canvas);
 
@@ -227,10 +201,12 @@
                 const gamma = parseFloat(gammaInput.value);
 
                 const startTime = performance.now(); // Start timing
-
+                
+                processImageKernel.setOutput([currentImage.width, currentImage.height]);
                 processImageKernel(
                     currentImage.pixels,
                     currentImage.width,
+                    currentImage.height,
                     brightness,
                     exposure,
                     gamma
@@ -238,8 +214,6 @@
 
                 const endTime = performance.now(); // End timing
                 const updateTime = endTime - startTime;
-
-                console.log(`Update image time: ${updateTime.toFixed(2)}ms`);
             }
 
             // Handle drag and drop events
@@ -280,63 +254,15 @@
                 loadTimeDiv.textContent = '';
                 currentImage = null;
 
-                if (!file.name.toLowerCase().endsWith('.exr')) {
-                    showError('Please select an EXR file.');
-                    return;
-                }
-
                 try {
-                    const startTime = performance.now();
+                    currentImage = await loadData(file);
 
-                    // Read file as ArrayBuffer
-                    const arrayBuffer = await file.arrayBuffer();
-                    const data = new Uint8Array(arrayBuffer);
-
-                    const exrImage = exrLoader.loadEXRStr(data.buffer);
-
-                    if (exrImage) {
-                        const channels = exrImage.channels();
-                        const channelsList = Array.from({ length: channels.length }, (_, i) => channels[i]);
-                        
-                        if (channelsList.includes('R') && channelsList.includes('G') && channelsList.includes('B')) {
-                            const width = exrImage.width;
-                            const height = exrImage.height;
-                            const totalPixels = width * height;
-                            
-                            // Create a combined RGB array
-                            const pixels = new Float32Array(totalPixels * 3);
-                            const rPlane = exrImage.plane('R');
-                            const gPlane = exrImage.plane('G');
-                            const bPlane = exrImage.plane('B');
-                            
-                            // Combine RGB channels into a single array
-                            // for (let i = 0; i < totalPixels; i++) {
-                            //     pixels[i] = [rPlane[i], gPlane[i], bPlane[i]];
-                            // }
-
-                            // Initialize GPU kernel with image dimensions
-                            packRGB.setOutput([width, height]);
-                            processImageKernel.setOutput([width, height]);
-
-                            // Store the current image data
-                            currentImage = {
-                                width: width,
-                                height: height,
-                                pixels: packRGB(rPlane, gPlane, bPlane)
-                            };
-                            
-                            // Display initial image
-                            controls.style.display = 'block';
-                            updateImage();
-                        }
-                    }
-
-                    const endTime = performance.now();
-                    const loadTime = endTime - startTime;
+                    controls.style.display = 'block';
+                    updateImage();
 
                     // Display results
-                    loadTimeDiv.textContent = `Load time: ${loadTime.toFixed(2)}ms`;
-                    infoPanel.style.display = 'block';
+                    // loadTimeDiv.textContent = `Load time: ${loadTime.toFixed(2)}ms`;
+                    // infoPanel.style.display = 'block';
 
                 } catch (err) {
                     showError(`Error loading EXR file: ${err.message}`);

@@ -1,0 +1,115 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.drop-zone {
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.drop-zone:hover {
+  border-color: #666;
+}
+
+.drop-zone.drag-over {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+}
+
+.preview-container {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.preview-canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.controls {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+
+.control-group {
+  margin-bottom: 15px;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+}
+
+.control-value {
+  display: inline-block;
+  margin-left: 10px;
+  min-width: 40px;
+}
+
+.info-panel {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.error-message {
+  color: #ff0000;
+  padding: 10px;
+  margin: 10px 0;
+  background: #ffe6e6;
+  border-radius: 4px;
+  margin-top: 10px;
+  display: none;
+}
+
+.hidden {
+  display: none;
+}
+
+canvas {
+  max-width: 100%;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+}
+
+.controls {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  /* display: none; */
+}
+
+.control-group {
+  margin-bottom: 15px;
+}
+
+.control-group label {
+  display: inline-block;
+  width: 100px;
+  margin-right: 10px;
+}
+
+.control-group input {
+  width: 200px;
+}
+
+.control-value {
+  display: inline-block;
+  width: 50px;
+  text-align: right;
+  margin-left: 10px;
+}

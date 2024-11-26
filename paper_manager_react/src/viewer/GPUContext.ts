@@ -55,11 +55,8 @@ class GPUContext {
     ) {
       const x = this.thread.x;
       const y = height - this.thread.y - 1;
-
       const pixel = pixels[y][x];
-
       const final = (this as any).process(pixel, brightness, exposure, gamma);
-
       this.color(final[0], final[1], final[2], 1.0);
     }).setGraphical(true).setDynamicOutput(true);
   }

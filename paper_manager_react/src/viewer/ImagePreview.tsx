@@ -8,12 +8,20 @@ interface ImagePreviewProps {
 }
 
 export const ImagePreview: React.FC<ImagePreviewProps> = ({ imageData, controls }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !imageData) return;
-
+    if (!imageData) return;
+    
+    const startTime = performance.now();
+    
     const processImageKernel = gpuContext.processImageKernel;
+    const canvas = processImageKernel.canvas;
+
+    if (!canvasContainerRef.current?.contains(canvas)) {
+      canvasContainerRef.current?.appendChild(canvas);
+    }
+    
     processImageKernel.setOutput([imageData.width, imageData.height]);
     
     processImageKernel(
@@ -25,17 +33,14 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ imageData, controls 
       controls.gamma
     );
 
-    const canvas = processImageKernel.canvas;
-    const ctx = canvasRef.current.getContext('2d')!;
-    ctx.drawImage(canvas, 0, 0);
+    const endTime = performance.now();
+    const updateTime = endTime - startTime;
+
+    console.log(`Update image time: ${updateTime.toFixed(2)}ms`);
+
   }, [imageData, controls]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={imageData.width}
-      height={imageData.height}
-      className="preview-canvas"
-    />
+    <div className="preview-container" ref={canvasContainerRef}></div>
   );
 };

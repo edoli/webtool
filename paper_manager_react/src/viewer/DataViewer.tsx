@@ -39,9 +39,7 @@ export const DataViewer: React.FC = () => {
 
       {imageData && (
         <>
-          <div className="preview-container">
-            <ImagePreview imageData={imageData} controls={controls} />
-          </div>
+          <ImagePreview imageData={imageData} controls={controls} />
           
           <Controls values={controls} onChange={setControls} />
           

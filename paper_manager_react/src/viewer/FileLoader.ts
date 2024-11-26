@@ -78,8 +78,6 @@ class FileLoader {
     const arrayBuffer = await file.arrayBuffer();
     const data = new Uint8Array(arrayBuffer);
     
-    // Note: exrLoader needs to be properly imported and typed
-    console.log(exrLoader);
     const exrImage = exrLoader.loadEXRStr(data.buffer);
 
     if (exrImage) {

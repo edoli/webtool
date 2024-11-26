@@ -16,6 +16,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # X11 관련 패키지들 설치 (gpu.js에서 필요로 함)
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxi-dev \
+            libx11-dev \
+            libxext-dev \
+            xorg-dev \
+            libgl1-mesa-dev
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:

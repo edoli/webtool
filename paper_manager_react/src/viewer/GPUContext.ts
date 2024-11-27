@@ -1,4 +1,22 @@
-import { GPU, IKernelRunShortcut } from 'gpu.js';
+import { GPU, IKernelRunShortcut, KernelVariable, WebGL2Kernel } from 'gpu.js';
+
+declare module 'gpu.js' {
+  interface Kernel {
+    afterBuild?: () => void;
+    setAfterBuild(callback?: () => void): void
+  }
+}
+
+const originalBuild = WebGL2Kernel.prototype.build;
+
+WebGL2Kernel.prototype.build = function(...args: KernelVariable[]) {
+  originalBuild.apply(this, args);
+  this.afterBuild?.();
+};
+
+WebGL2Kernel.prototype.setAfterBuild = function(callback?: () => void) {
+  this.afterBuild = callback;
+};
 
 class GPUContext {
   public repackData!: IKernelRunShortcut;
@@ -90,7 +108,7 @@ class GPUContext {
       gamma: number
     ) {
       const x = this.thread.x;
-      const y = height - this.thread.y - 1;
+      const y = this.output.y - this.thread.y - 1;
       const pixel = pixels[y][x];
       const final = (this as any).process(pixel, brightness, exposure, gamma);
       this.color(final[0], final[1], final[2], 1.0);

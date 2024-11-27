@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Parser to CSV and Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        h1 { color: #333; }
+        #csvOutput { width: 100%; height: 200px; margin-top: 20px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; margin-top: 10px; margin-right: 10px; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+    <p>Paste your HTML content below:</p>
+    <textarea id="htmlInput" rows="10" cols="100"></textarea>
+    <br>
+    <button onclick="parseTable()">Parse Table</button>
+    <br>
+    <textarea id="csvOutput" readonly></textarea>
+    <br>
+    <button onclick="downloadCSV()">Download CSV</button>
+    <button onclick="downloadExcel()">Download Excel</button>
+
+    <script>
+        let parsedData = [];
+
+        const columns = [
+            '순위', '종합점수', 'LEET', 'GPA', '학부', '자교 순위', '타교 순위', 
+            '전공', '나이', '타군(대학)', '타군(일반/특별)', '어학점수', '(시험)종류',
+            '봉사', '수상', '경력', '자격증', '논문'
+        ];
+
+        function parseScore(scoreText) {
+            const match = scoreText.match(/(\d+(?:\.\d+)?)/);
+            return match ? parseFloat(match[1]) : '';
+        }
+
+        function parseTable() {
+            const htmlContent = document.getElementById('htmlInput').value;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+            const table = doc.querySelector('.tbl01');
+            
+            if (!table) {
+                alert('No table with class "tbl01" found in the input HTML.');
+                return;
+            }
+
+            const rows = table.querySelectorAll('tbody tr');
+            parsedData = [];
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                const rowData = [];
+                
+                // 순위
+                rowData.push(cells[0].textContent.trim());
+                
+                // 종합점수
+                rowData.push(parseScore(cells[1].textContent));
+                
+                // LEET
+                rowData.push(parseScore(cells[2].textContent));
+                
+                // GPA
+                rowData.push(parseScore(cells[4].textContent));
+                
+                // 학부 (출신대학)
+                const univText = cells[6].textContent.trim();
+                const univMatch = univText.match(/(.*?)\s*\(\s*(자교|타교)(\d+)등\s*\)/);
+                rowData.push(univMatch ? univMatch[1] : univText);
+                
+                // 자교 순위
+                rowData.push(univMatch && univMatch[2] === '자교' ? univMatch[3] : '');
+                
+                // 타교 순위
+                rowData.push(univMatch && univMatch[2] === '타교' ? univMatch[3] : '');
+                
+                // 전공
+                const majorText = cells[7].textContent.trim();
+                const majorMatch = majorText.match(/(.*?)\s*\(\s*(법학|비법학)(\d+)등\s*\)/);
+                rowData.push(majorMatch ? majorMatch[1] : majorText);
+                
+                // 나이
+                rowData.push(cells[8].textContent.trim());
+                
+                // 타군(대학)과 타군(일반/특별)
+                const otherAppText = cells[9].textContent.trim();
+                const otherAppMatch = otherAppText.match(/(.*?)\s*\(\s*(.*?)\s*\)/);
+                rowData.push(otherAppMatch ? otherAppMatch[1] : ''); // 타군(대학)
+                rowData.push(otherAppMatch ? otherAppMatch[2] : ''); // 타군(일반/특별)
+                
+                // 어학점수와 (시험)종류
+                const englishScoreText = cells[3].textContent.trim();
+                const englishMatch = englishScoreText.match(/(\d+\.?\d*)점\s*\(\s*(.*?)\s*\)/);
+                rowData.push(englishMatch ? parseFloat(englishMatch[1]) : ''); // 어학점수
+                rowData.push(englishMatch ? englishMatch[2] : ''); // (시험)종류
+                
+                // 서류 정보 파싱 (봉사, 수상, 경력, 자격증, 논문)
+                const paperworkText = cells[5].textContent.trim();
+                const paperworkItems = paperworkText.split('\n').map(item => item.trim());
+                const paperworkData = {
+                    '봉사': '', '수상경력': '', '경력': '', '기타자격증': '', '대학원 논문': ''
+                };
+                paperworkItems.forEach(item => {
+                    const [key, value] = item.split('] ');
+                    if (key && value) {
+                        paperworkData[key.slice(1)] = value;
+                    }
+                });
+                
+                rowData.push(paperworkData['봉사']);
+                rowData.push(paperworkData['수상경력']);
+                rowData.push(paperworkData['경력']);
+                rowData.push(paperworkData['기타자격증']);
+                rowData.push(paperworkData['대학원 논문']);
+                
+                parsedData.push(rowData);
+            });
+
+            const csv = Papa.unparse({
+                fields: columns,
+                data: parsedData
+            });
+
+            document.getElementById('csvOutput').value = csv;
+        }
+
+        function downloadCSV() {
+            const csv = document.getElementById('csvOutput').value;
+            if (!csv) {
+                alert('Please parse the table first.');
+                return;
+            }
+
+            // UTF-8 BOM
+            const BOM = "\uFEFF";
+            const csvWithBOM = BOM + csv;
+
+            const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (navigator.msSaveBlob) {
+                navigator.msSaveBlob(blob, 'table_data.csv');
+            } else {
+                link.href = URL.createObjectURL(blob);
+                link.download = 'table_data.csv';
+                link.click();
+            }
+        }
+
+        function downloadExcel() {
+            if (parsedData.length === 0) {
+                alert('Please parse the table first.');
+                return;
+            }
+
+            const ws = XLSX.utils.aoa_to_sheet([columns, ...parsedData]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            
+            XLSX.writeFile(wb, 'table_data.xlsx');
+        }
+    </script>
+</body>
+</html>

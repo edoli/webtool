@@ -12,6 +12,7 @@
   "dependencies": {
     "gpu.js": "^2.16.0",
     "lodash": "^4.17.21",
+    "npyjs": "^0.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.0.1"

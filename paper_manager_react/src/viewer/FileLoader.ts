@@ -1,13 +1,12 @@
-
-import { ImageData } from './types.js';
+import { ImageData } from './types';
 import { gpuContext } from './GPUContext.js';
 import npyjs from "npyjs";
-import { exr } from './exr-wrap.js';
+import { exr, EXRModule } from './exr-wrap';
 
 type ImageLoader = (file: File) => Promise<ImageData | undefined>;
 
-let exrLoader: any;
-exr.then((loader: any) => exrLoader = loader);
+let exrLoader: EXRModule;
+exr.then((loader) => exrLoader = loader);
 
 class FileLoader {
   loadData: ImageLoader = async (file) => {

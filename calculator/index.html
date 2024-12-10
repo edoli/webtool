@@ -42,9 +42,43 @@
             content: "r" counter(section);
         }
 
-        .formula-input {
+        .formula-input-wrapper {
+            position: relative;
             flex: 1;
-            width: 0;
+        }
+
+        .formula-display {
+            min-height: 1.5em;
+            border-radius: 4px;
+            padding: 4px 8px;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: inherit;
+            font-weight: inherit;
+        }
+
+        input.formula-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: text;
+            color: transparent;
+            caret-color: black;
+            background: transparent;
+            padding: 4px 8px;
+            border: none;
+            font-size: inherit;
+            font-weight: inherit;
+        }
+
+        .highlight-function {
+            color: #0066cc;  /* 함수는 파란색 */
+        }
+
+        .highlight-variable {
+            color: #cc6600;  /* 변수는 주황색 */
         }
 
         .formula-button-container {
@@ -151,6 +185,44 @@
         const formulas = [];
         const variables = {};
 
+        function highlightFormula(text) {
+            // 임시 토큰으로 함수 하이라이트 부분을 보호
+            let count = 0;
+            const tokens = [];
+            let processedText = text;
+
+            // 먼저 함수 이름을 하이라이트하고 임시 토큰으로 교체
+            const functionNames = Object.keys(mathFunctions);
+            const functionRegex = new RegExp(`\\b(${functionNames.join('|')})\\b`, 'g');
+            processedText = processedText.replace(functionRegex, (match) => {
+                const token = `__FUNCTION_${count}__`;
+                tokens.push({
+                    token: token,
+                    value: `<span class="highlight-function">${match}</span>`
+                });
+                count++;
+                return token;
+            });
+
+            // 그 다음 변수를 하이라이트
+            const predefinedNames = Object.keys(mathPredefined).join('|');
+            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
+            
+            processedText = processedText.replace(variableRegex, (match) => {
+                if (!mathPredefined.hasOwnProperty(match)) {
+                    return `<span class="highlight-variable">${match}</span>`;
+                }
+                return match;
+            });
+
+            // 마지막으로 임시 토큰을 실제 함수 하이라이트로 교체
+            tokens.forEach(({token, value}) => {
+                processedText = processedText.replace(token, value);
+            });
+
+            return processedText;
+        }
+
         // DOM 요소들
         const formulaContainer = document.getElementById('formula-container');
         const formulaAddButton = document.getElementById('formula-add-button');
@@ -166,51 +238,65 @@
         // 상수 목록 표시
         constantsList.textContent = Object.keys(mathConstants).join(', ');
 
-        function createFormulaBlock(initialTemplate="") {
+        
+        function createFormulaBlock(initialTemplate = "") {
             const formulaBlock = document.createElement('div');
             formulaBlock.className = 'formula-block';
 
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'formula-input-wrapper';
+            
+            const formulaDisplay = document.createElement('div');
+            formulaDisplay.className = 'formula-display';
+            
             const formulaInput = document.createElement('input');
             formulaInput.type = 'text';
-            formulaInput.className = 'formula-input plain-input';
-            formulaInput.placeholder = '예: sin(x) + cos(y)';
+            formulaInput.className = 'formula-input';
             formulaInput.value = initialTemplate;
 
             const resultSpan = document.createElement('span');
             resultSpan.textContent = "= ";
-
             const resultDisplay = document.createElement('span');
-
             resultSpan.appendChild(resultDisplay);
 
-            formulaBlock.appendChild(formulaInput);
+            inputWrapper.appendChild(formulaDisplay);
+            inputWrapper.appendChild(formulaInput);
+            formulaBlock.appendChild(inputWrapper);
             formulaBlock.appendChild(resultSpan);
 
             const formula = {
-                formulaTemplate: "",
+                formulaTemplate: initialTemplate,
                 formulaBlock: formulaBlock,
                 formulaInput: formulaInput,
+                formulaDisplay: formulaDisplay,
                 resultDisplay: resultDisplay,
             };
+
             formulas.push(formula);
 
             formulaInput.addEventListener('input', (e) => {
                 formula.formulaTemplate = e.target.value;
+                formulaDisplay.innerHTML = highlightFormula(e.target.value);
                 updateVariableInputs();
             });
+
+            // 초기 하이라이트 적용
+            formulaDisplay.innerHTML = highlightFormula(initialTemplate);
             
             formulaContainer.appendChild(formulaBlock);
-
             return formula;
         }
 
         // 변수 추출 함수
         function extractVariables(formula) {
             const predefinedNames = Object.keys(mathPredefined).join('|');
-            const regex = new RegExp(`(?<!(?:${predefinedNames}))\\b[a-zA-Z]\\b`, 'g');
-            const vars = new Set(formula.match(regex) || []);
+            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
+            const matches = formula.match(variableRegex) || [];
+            // 함수명이나 상수명과 겹치지 않는 것만 변수로 추출
+            const vars = new Set(matches.filter(match => !mathPredefined.hasOwnProperty(match)));
             return Array.from(vars);
         }
+
 
         // 결과 계산 함수
         function calculateResult(formulaObj, tmpContext) {
@@ -299,7 +385,6 @@
             formulas.forEach((formula, index) => {
                 const result = calculateResult(formula, tmpContext);
 
-                console.log(result);
                 if (typeof result === 'number') {
                     tmpContext[`r${index + 1}`] = result;
                     formula.resultDisplay.textContent = typeof result === 'number' ? result.toFixed(4) : "";

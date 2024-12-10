@@ -30,6 +30,7 @@
             font-weight: 600;
             counter-increment: section;
             position: relative;
+            transition: var(--default-transition);
         }
 
         .formula-block::after {
@@ -59,6 +60,7 @@
 
         input.formula-input {
             position: absolute;
+            text-decoration: none;
             top: 0;
             left: 0;
             width: 100%;
@@ -72,13 +74,20 @@
             font-size: inherit;
             font-weight: inherit;
         }
+        input.formula-input:focus{
+            outline: none;
+        }
 
         .highlight-function {
-            color: #0066cc;  /* 함수는 파란색 */
+            color: #0066cc;
+        }
+
+        .highlight-constant {
+            color: #33aa33;
         }
 
         .highlight-variable {
-            color: #cc6600;  /* 변수는 주황색 */
+            color: #cc6600;
         }
 
         .formula-button-container {
@@ -199,6 +208,19 @@
                 tokens.push({
                     token: token,
                     value: `<span class="highlight-function">${match}</span>`
+                });
+                count++;
+                return token;
+            });
+
+            // 먼저 상수 이름을 하이라이트하고 임시 토큰으로 교체
+            const constantNames = Object.keys(mathConstants);
+            const constantRegex = new RegExp(`\\b(${constantNames.join('|')})\\b`, 'g');
+            processedText = processedText.replace(constantRegex, (match) => {
+                const token = `__CONSTANT_${count}__`;
+                tokens.push({
+                    token: token,
+                    value: `<span class="highlight-constant">${match}</span>`
                 });
                 count++;
                 return token;

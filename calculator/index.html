@@ -86,6 +86,10 @@
             color: #33aa33;
         }
 
+        .highlight-result {
+            color: #8600df;
+        }
+
         .highlight-variable {
             color: #cc6600;
         }
@@ -200,7 +204,7 @@
             const tokens = [];
             let processedText = text;
 
-            // 먼저 함수 이름을 하이라이트하고 임시 토큰으로 교체
+            // 함수 이름을 하이라이트하고 임시 토큰으로 교체
             const functionNames = Object.keys(mathFunctions);
             const functionRegex = new RegExp(`\\b(${functionNames.join('|')})\\b`, 'g');
             processedText = processedText.replace(functionRegex, (match) => {
@@ -213,7 +217,7 @@
                 return token;
             });
 
-            // 먼저 상수 이름을 하이라이트하고 임시 토큰으로 교체
+            // 상수 이름을 하이라이트하고 임시 토큰으로 교체
             const constantNames = Object.keys(mathConstants);
             const constantRegex = new RegExp(`\\b(${constantNames.join('|')})\\b`, 'g');
             processedText = processedText.replace(constantRegex, (match) => {
@@ -226,9 +230,21 @@
                 return token;
             });
 
-            // 그 다음 변수를 하이라이트
+            // 결과 변수를 하이라이트
+            const resultRegex = new RegExp(`\\br\\d+\\b`, 'g');            
+            processedText = processedText.replace(resultRegex, (match) => {
+                const token = `__RESULT_${count}__`;
+                tokens.push({
+                    token: token,
+                    value: `<span class="highlight-result">${match}</span>`
+                });
+                count++;
+                return token;
+            });
+
+            // 변수를 하이라이트
             const predefinedNames = Object.keys(mathPredefined).join('|');
-            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
+            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b(?!r\\d)[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
             
             processedText = processedText.replace(variableRegex, (match) => {
                 if (!mathPredefined.hasOwnProperty(match)) {
@@ -312,7 +328,7 @@
         // 변수 추출 함수
         function extractVariables(formula) {
             const predefinedNames = Object.keys(mathPredefined).join('|');
-            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
+            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b(?!r\\d)[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
             const matches = formula.match(variableRegex) || [];
             // 함수명이나 상수명과 겹치지 않는 것만 변수로 추출
             const vars = new Set(matches.filter(match => !mathPredefined.hasOwnProperty(match)));

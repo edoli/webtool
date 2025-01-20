@@ -3,7 +3,7 @@ import PDFManager from './pages/PDFManager';
 
 const App = () => {
   return (
-    <Router>
+    <Router basename="/webtool/paper_manager">
       <Routes>
         <Route path="/" element={<PDFManager />} />
       </Routes>

@@ -58,7 +58,7 @@ const PDFManager: React.FC = () => {
         prev.map(pdf => ({
           ...pdf,
           tags: new Set(data.pdfs[pdf.name]?.tags || []),
-          note: data.pdfs[pdf.name].note || ""
+          note: data.pdfs[pdf.name]?.note || ""
         }))
       );
     } catch (error) {

@@ -25,7 +25,14 @@ jobs:
             libx11-dev \
             libxext-dev \
             xorg-dev \
-            libgl1-mesa-dev
+            libgl1-mesa-dev \
+            build-essential \
+            libglu1-mesa-dev \
+            libglew-dev \
+            pkg-config \
+            mesa-common-dev \
+            libosmesa6-dev \
+            libangle-dev
 
       - name: Set up Node.js
         uses: actions/setup-node@v3

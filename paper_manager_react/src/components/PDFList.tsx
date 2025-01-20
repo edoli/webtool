@@ -95,8 +95,8 @@ const PDFList: React.FC<PDFListProps> = ({
       <div className="pdf-list-controls">
         <div className="sort-controls">
           <select onChange={(e) => onSort(e.target.value as SortMethod)}>
-            <option value="date">날짜순 (오름차순)</option>
-            <option value="date_reverse">날짜순 (내림차순)</option>
+            <option value="date">최신순</option>
+            <option value="date_reverse">오래된순</option>
             <option value="name">이름순 (오름차순)</option>
             <option value="name_reverse">이름순 (내림차순)</option>
           </select>

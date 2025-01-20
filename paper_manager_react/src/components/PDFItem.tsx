@@ -52,10 +52,15 @@ const PDFItem: React.FC<PDFItemProps> = ({ pdf, tags, onSelect, onAddTag, onRemo
       }}
     >
       <div className="pdf-info">
-        <div className="pdf-name">
-          <a href={URL.createObjectURL(pdf.file)} target="_blank" rel="noopener noreferrer">
-            {pdf.name}
-          </a>
+        <div className="pdf-title">
+          <div className="pdf-name">
+            <a href={URL.createObjectURL(pdf.file)} target="_blank" rel="noopener noreferrer">
+              {pdf.name}
+            </a>
+          </div>
+          <div className="pdf-date">
+            {new Date(pdf.lastModified).toLocaleDateString()}
+          </div>
         </div>
         <div className="pdf-tags">
           {Array.from(pdf.tags).sort().map(tag => (

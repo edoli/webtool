@@ -205,11 +205,17 @@
   pointer-events: none;
 }
 
-.pdf-info .pdf-name {
+.pdf-info .pdf-title .pdf-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: auto;
+}
+
+.pdf-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .pdf-name a {
@@ -218,6 +224,13 @@
 }
 .pdf-name a:hover {
   color: var(--primary-color);
+}
+
+.pdf-date {
+  font-size: 11px;
+  display: flex;
+  color: var(--secondary-color);
+  pointer-events: none;
 }
 
 .pdf-tags {

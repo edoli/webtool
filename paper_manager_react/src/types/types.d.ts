@@ -9,6 +9,7 @@ interface Tags {
 interface PDFInfo {
   tags: string[];
   note: string;
+  links: string[];
 }
 
 interface PDFs {
@@ -23,6 +24,7 @@ interface PDFFile {
   tags: Set<string>;
   selected?: boolean;
   note?: string;
+  links: string[];
 }
 
 interface DatabaseStructure {

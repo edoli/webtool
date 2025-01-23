@@ -8,6 +8,17 @@ import TagsPanel from '../components/TagsPanel';
 import PDFList from '../components/PDFList';
 import PDFInfoPanel from '../components/PDFInfoPanel';
 
+interface FileSystemPermissionDescriptor {
+  mode?: 'read' | 'readwrite';
+}
+
+interface FileSystemHandle {
+  queryPermission: (descriptor: FileSystemPermissionDescriptor) => Promise<PermissionState>;
+  requestPermission: (descriptor: FileSystemPermissionDescriptor) => Promise<PermissionState>;
+}
+
+type PermissionState = 'granted' | 'denied' | 'prompt';
+
 const PDFManager: React.FC = () => {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
   const [tags, setTags] = useState<Tags>({});
@@ -108,9 +119,59 @@ const PDFManager: React.FC = () => {
         path: file.webkitRelativePath || undefined,
         lastModified: file.lastModified,
         file: file,
-        tags: new Set()
+        tags: new Set(),
+        links: [],
       }
     ]);
+  };
+
+  const verifyPermission = async (handle: FileSystemHandle) => {
+    const options: FileSystemPermissionDescriptor = { mode: 'read' };
+    if (await handle.queryPermission(options) === 'granted') {
+      return true;
+    }
+    return await handle.requestPermission(options) === 'granted';
+  };
+
+  const loadDirectoryHandle = () => {
+    const request = indexedDB.open('FileSystemDB', 1);
+    
+    request.onerror = () => {
+      console.error('Database error:', request.error);
+    };
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('handles')) {
+        db.createObjectStore('handles', { keyPath: 'id' });
+      }
+    };
+
+    request.onsuccess = async () => {
+      const db = request.result;
+      const transaction = db.transaction(['handles'], 'readonly');
+      const store = transaction.objectStore('handles');
+      
+      const getRequest = store.get('mainFolder');
+      getRequest.onsuccess = async () => {
+        if (getRequest.result?.handle) {
+          const handle = getRequest.result.handle;
+          await verifyPermission(handle);
+          setDirectoryHandle(handle);
+        }
+      };
+    };
+  };
+
+  const saveDirectoryHandle = (handle: FileSystemHandle) => {
+    const request = indexedDB.open('FileSystemDB', 1);
+    
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['handles'], 'readwrite');
+      const store = transaction.objectStore('handles');
+      store.put({ id: 'mainFolder', handle });
+    };
   };
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -122,6 +183,8 @@ const PDFManager: React.FC = () => {
         const handle = await (item as any).getAsFileSystemHandle();
         if (handle.kind === 'directory') {
           setDirectoryHandle(handle);
+
+          saveDirectoryHandle(handle);
         }
       }
     }
@@ -256,6 +319,7 @@ const PDFManager: React.FC = () => {
 
   return (
     <div className="container-full">
+      { !directoryHandle && <div className='button' onClick={loadDirectoryHandle}>이전내용로드</div> }
       <DropZone onDrop={handleDrop} onClick={handleDirectorySelect} />
       <div className="container-column">
         <div className="main-panel">

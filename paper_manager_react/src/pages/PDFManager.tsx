@@ -24,6 +24,7 @@ const PDFManager: React.FC = () => {
   const [tags, setTags] = useState<Tags>({});
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [shouldSave, setShouldSave] = useState(0);
+  const [sortMethod, setSortMethod] = useState<SortMethod>('date');
   const DB_FILE = '.epmg.json';
 
   const selectedPDFs = pdfFiles.filter(pdf => pdf.selected);
@@ -32,7 +33,8 @@ const PDFManager: React.FC = () => {
     setShouldSave(prev => prev + 1);
   }, 1000), []);
 
-  const processDirectory = async (handle: FileSystemDirectoryHandle) => {
+  const processDirectory = async (handle: FileSystemDirectoryHandle, depth: number = 0) => {
+    const files: File[] = [];
     try {
       const entries = handle.values();
       for await (const entry of entries) {
@@ -40,15 +42,21 @@ const PDFManager: React.FC = () => {
           if (entry.name.toLowerCase().endsWith('.pdf')) {
             const fileHandle = (entry as FileSystemFileHandle);
             const file = await fileHandle.getFile();
-            addPDFFile(file);
+            files.push(file);
           }
         } else if (entry.kind === 'directory') {
-          await processDirectory(entry as FileSystemDirectoryHandle);
+          const sub_files = await processDirectory(entry as FileSystemDirectoryHandle, depth + 1);
+          files.push(...sub_files);
         }
       }
     } catch (error) {
       console.error('디렉토리 처리 중 오류 발생:', error);
     }
+
+    if (depth === 0) {
+      addPDFFiles(files);
+    }
+    return files;
   };
 
   const loadDatabase = async () => {
@@ -111,17 +119,17 @@ const PDFManager: React.FC = () => {
     }
   };
 
-  const addPDFFile = (file: File) => {
+  const addPDFFiles = (files: File[]) => {
     setPdfFiles(prev => [
       ...prev,
-      {
+      ...files.map(file => ({
         name: file.name,
         path: file.webkitRelativePath || undefined,
         lastModified: file.lastModified,
         file: file,
-        tags: new Set(),
-        links: [],
-      }
+        tags: new Set<string>(),
+        links: []
+      }))
     ]);
   };
 
@@ -199,10 +207,10 @@ const PDFManager: React.FC = () => {
     }
   };
 
-  const sortPDFs = (method: SortMethod) => {
+  const sortPDFs = () => {
     setPdfFiles(prev =>
       [...prev].sort((a, b) => {
-        switch (method) {
+        switch (sortMethod) {
           case 'date':
             return b.lastModified - a.lastModified;
           case 'date_reverse':
@@ -216,8 +224,7 @@ const PDFManager: React.FC = () => {
         }
       })
     );
-    trySaveDatabase();
-  };
+  }
 
   const addTagsToSelected = () => {
     const tag = prompt('추가할 태그를 입력하세요:');
@@ -307,6 +314,7 @@ const PDFManager: React.FC = () => {
 
       const init = async () => {
         await processDirectory(directoryHandle);
+        sortPDFs();
         await loadDatabase();
       }
       init();
@@ -316,6 +324,10 @@ const PDFManager: React.FC = () => {
   useEffect(() => {
     saveDatabase();
   }, [shouldSave]);
+
+  useEffect(() => {
+    sortPDFs();
+  }, [sortMethod]);
 
   return (
     <div className="container-full">
@@ -328,7 +340,7 @@ const PDFManager: React.FC = () => {
             pdfFiles={pdfFiles}
             tags={tags}
             setPdfFiles={setPdfFiles}
-            onSort={sortPDFs}
+            onSort={setSortMethod}
             onAddTags={addTagsToSelected}
             onAddTag={addTagToPDF}
             onRemoveTag={removeTagFromPDF}

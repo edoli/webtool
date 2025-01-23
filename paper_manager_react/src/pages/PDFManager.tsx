@@ -319,8 +319,9 @@ const PDFManager: React.FC = () => {
 
   return (
     <div className="container-full">
-      { !directoryHandle && <div className='button' onClick={loadDirectoryHandle}>이전내용로드</div> }
-      <DropZone onDrop={handleDrop} onClick={handleDirectorySelect} />
+      <div className='button' onClick={loadDirectoryHandle}>{ directoryHandle ? '새로고침' : '이전폴더로드' }</div>
+      { !directoryHandle ? <DropZone onDrop={handleDrop} onClick={handleDirectorySelect} /> : <div style={{ height: 16 }}></div> }
+      
       <div className="container-column">
         <div className="main-panel">
           <PDFList

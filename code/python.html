@@ -151,7 +151,7 @@ plt.savefig("/plot.png")</textarea>
           window.pyodide = await loadPyodide();
           console.log("Pyodide 로드 완료");
 
-          await pyodide.loadPackage(["numpy", "matplotlib"])
+          await pyodide.loadPackage(["numpy", "matplotlib", "pandas", "micropip"])
               .then(() => console.log("numpy, matplotlib 로드 완료"))
               .catch(err => console.error("패키지 로드 실패:", err));
       }

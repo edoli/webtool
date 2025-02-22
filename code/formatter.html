@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코드 포맷터 for PPT</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .input-section, .output-section {
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            resize: vertical;
+            white-space: pre;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        select, button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        pre {
+            margin: 0;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre !important;
+        }
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre !important;
+        }
+        .theme-selector {
+            margin-bottom: 10px;
+        }
+        .copy-message {
+            display: none;
+            color: green;
+            margin-top: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .notice {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>코드 포맷터 for PPT</h1>
+    <div class="container">
+        <div class="input-section">
+            <div class="controls">
+                <select id="languageSelect">
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                </select>
+            </div>
+            <textarea id="codeInput" placeholder="여기에 코드를 붙여넣으세요..."></textarea>
+        </div>
+        <div class="output-section">
+            <button id="copyButton">포맷된 코드 복사</button>
+            <div id="copyMessage" class="copy-message">코드가 클립보드에 복사되었습니다!</div>
+            <pre><code id="codeOutput" class="language-python"></code></pre>
+        </div>
+    </div>
+    <p class="notice">* PPT에 붙여넣을 때는 서식을 유지하여 붙여넣기를 사용하세요.</p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const codeInput = document.getElementById('codeInput');
+            const codeOutput = document.getElementById('codeOutput');
+            const languageSelect = document.getElementById('languageSelect');
+            const copyButton = document.getElementById('copyButton');
+            const copyMessage = document.getElementById('copyMessage');
+
+            function updateCode() {
+                try {
+                    const code = codeInput.value;
+                    const language = languageSelect.value;
+                    
+                    codeOutput.className = `language-${language}`;
+                    codeOutput.textContent = code;
+
+                    if (window.Prism) {
+                        Prism.highlightElement(codeOutput);
+                    }
+                } catch (error) {
+                    console.error('코드 업데이트 중 오류 발생:', error);
+                }
+            }
+
+            codeInput.addEventListener('input', updateCode);
+            languageSelect.addEventListener('change', updateCode);
+
+            copyButton.addEventListener('click', async () => {
+                try {
+                    // 복사 버튼 비활성화
+                    copyButton.disabled = true;
+                    
+                    // 포맷된 코드 가져오기 (원본 텍스트만)
+                    const formattedCode = codeInput.value;
+                    
+                    // Clipboard API를 사용하여 복사
+                    await navigator.clipboard.writeText(formattedCode);
+                    
+                    // 성공 메시지 표시
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                        // 복사 버튼 다시 활성화
+                        copyButton.disabled = false;
+                    }, 2000);
+                } catch (err) {
+                    console.error('복사 중 오류 발생:', err);
+                    alert('클립보드 복사에 실패했습니다. 직접 선택하여 복사해주세요.');
+                    copyButton.disabled = false;
+                }
+            });
+
+            // 초기 코드 업데이트
+            updateCode();
+        });
+    </script>
+</body>
+</html>

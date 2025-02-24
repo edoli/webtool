@@ -1,117 +1,134 @@
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Local python editor</title>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
-  
-  <!-- CodeMirror 기본 CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local python editor</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
-  <!-- CodeMirror JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
+    <!-- CodeMirror 기본 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
 
-  <!-- CodeMirror VS Code 스타일 테마 (One Dark) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/material-palenight.min.css">
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
 
-  <style>
-      body {
-          font-family: "Pretendard", sans-serif;
-          background-color: #f8fafc;
-          color: #333;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-          margin: 0;
-      }
-      .container {
-          background: white;
-          padding: 20px;
-          border-radius: 12px;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-      }
-      .editor-section {
-          display: flex;
-          width: calc(100vw - 80px);
-          height: calc(100vh - 80px);
-          gap: 15px;
-      }
-      .code-editor, .output-area {
-          min-width: 300px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-      }
-      .code-editor {
-          flex: 0.7;
-      }
-      .output-area {
-          flex: 0.3;
-      }
-      .CodeMirror {
-          flex: 1;
-          border-radius: 8px;
-          border: 1px solid #ddd;
-          transition: 0.3s;
-          font-size: 16px;
-      }
-      .CodeMirror-focused {
-          border-color: #2563eb;
-          box-shadow: 0 0 5px rgba(37, 99, 235, 0.3);
-      }
-      .btn-container {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-      }
-      .btn {
-          padding: 10px 15px;
-          font-size: 16px;
-          border-radius: 8px;
-          border: none;
-          background-color: #2563eb;
-          color: white;
-          cursor: pointer;
-          transition: 0.3s;
-      }
-      .btn:hover {
-          background-color: #1d4ed8;
-      }
-      .output-title {
-          font-weight: bold;
-      }
-      .output-box {
-          background: #f4f4f4;
-          padding: 12px;
-          border-radius: 8px;
-          font-size: 14px;
-          white-space: pre-wrap;
-          overflow-x: auto;
-          overflow-y: auto;
-          flex: 1;
-      }
-      .image-box {
-          display: flex;
-          flex-direction: column;
-          background: #f4f4f4;
-          padding: 10px;
-          border-radius: 8px;
-          min-height: 200px;
-          flex: 1;
-      }
-  </style>
+    <!-- CodeMirror VS Code 스타일 테마 (One Dark) -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/material-palenight.min.css">
+
+    <style>
+        body {
+            font-family: "Pretendard", sans-serif;
+            background-color: #f8fafc;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .editor-section {
+            display: flex;
+            width: calc(100vw - 80px);
+            height: calc(100vh - 80px);
+            gap: 15px;
+        }
+
+        .code-editor,
+        .output-area {
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .code-editor {
+            flex: 0.7;
+        }
+
+        .output-area {
+            flex: 0.3;
+        }
+
+        .CodeMirror {
+            flex: 1;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .CodeMirror-focused {
+            border-color: #2563eb;
+            box-shadow: 0 0 5px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: #2563eb;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .output-title {
+            font-weight: bold;
+        }
+
+        .output-box {
+            background: #f4f4f4;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .image-box {
+            display: flex;
+            flex-direction: column;
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 8px;
+            min-height: 200px;
+            flex: 1;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container">
-      <div class="editor-section">
-          <!-- 코드 입력 영역 -->
-          <div class="code-editor">
-              <textarea id="code">import numpy as np
+    <div class="container">
+        <div class="editor-section">
+            <!-- 코드 입력 영역 -->
+            <div class="code-editor">
+                <textarea id="code">
+import numpy as np
 import matplotlib.pyplot as plt
 
 x = np.linspace(0, 10, 100)
@@ -126,92 +143,123 @@ plt.title("Sine Wave")
 plt.xlabel("X")
 plt.ylabel("Y")
 plt.grid(True)
+</textarea>
+                <div class="btn-container">
+                    <button class="btn" onclick="runPythonCode()">실행 (Ctrl + Enter)</button>
+                </div>
+            </div>
 
-plt.savefig("/plot.png")</textarea>
-              <div class="btn-container">
-                  <button class="btn" onclick="runPythonCode()">실행 (Ctrl + Enter)</button>
-              </div>
-          </div>
+            <!-- 출력 영역 -->
+            <div class="output-area">
+                <div class="output-title">출력 결과:</div>
+                <div id="output" class="output-box"></div>
 
-          <!-- 출력 영역 -->
-          <div class="output-area">
-              <div class="output-title">출력 결과:</div>
-              <div id="output" class="output-box"></div>
-              
-              <div class="output-title">그래프 출력:</div>
-              <div class="image-box">
-                  <img id="plot" src="" alt="그래프가 여기에 표시됩니다.">
-              </div>
-          </div>
-      </div>
-  </div>
+                <div class="output-title">그래프 출력:</div>
+                <div id="imageOutput" class="image-box">
+                    <div>그래프가 여기에 표시됩니다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <script>
-      async function loadPyodideAndPackages() {
-          window.pyodide = await loadPyodide();
-          console.log("Pyodide 로드 완료");
+    <script>
+        // Pyodide 로딩이 완료될 때까지 기다리는 Promise
+        window.pyodideReady = new Promise(async (resolve) => {
+            window.pyodide = await loadPyodide();
+            console.log("Pyodide 로드 완료");
 
-          await pyodide.loadPackage(["numpy", "matplotlib", "pandas", "micropip"])
-              .then(() => console.log("numpy, matplotlib 로드 완료"))
-              .catch(err => console.error("패키지 로드 실패:", err));
-      }
-      loadPyodideAndPackages();
+            await pyodide.loadPackage(["numpy", "matplotlib", "pandas", "micropip"])
+                .then(() => console.log("numpy, matplotlib 로드 완료"))
+                .catch(err => console.error("패키지 로드 실패:", err));
 
-      async function runPythonCode() {
-          let code = editor.getValue(); // CodeMirror에서 코드 가져오기
-          let outputElement = document.getElementById("output");
-          let plotElement = document.getElementById("plot");
-          outputElement.textContent = "";  // 기존 출력 초기화
+            resolve(); // Pyodide 로드 완료
+        });
 
-          try {
-              let result = await pyodide.runPythonAsync(`
+        async function runPythonCode() {
+            await window.pyodideReady;
+            let code = editor.getValue(); // CodeMirror에서 코드 가져오기
+            let outputElement = document.getElementById("output");
+            let plotContainer = document.getElementById("imageOutput");
+            outputElement.textContent = "";  // 기존 출력 초기화
+            plotContainer.innerHTML = "";
+
+            try {
+                if (window.pyodide) {
+                    pyodide.globals.clear();
+                    console.log("Pyodide 실행 컨텍스트 초기화 완료");
+                }
+                let result = await pyodide.runPythonAsync(`
 import sys
 from io import StringIO
 
 sys.stdout = sys.stderr = output_buffer = StringIO()
 
 ${code}
-              `);
+                `);
 
-              let print_result = await pyodide.runPythonAsync(`
-output_buffer.getvalue()
-              `);
+                let print_result = await pyodide.runPythonAsync(`output_buffer.getvalue()`);
 
-              if (result !== undefined) {
-                  print_result += result;
-              }
+                if (result !== undefined) {
+                    print_result += result;
+                }
 
-              outputElement.textContent = print_result;
+                outputElement.textContent = print_result;
 
-              // 그래프 업데이트
-              try {
-                  let imgURL = pyodide.FS.readFile("/plot.png", { encoding: "binary" });
-                  let blob = new Blob([imgURL], { type: "image/png" });
-                  plotElement.src = URL.createObjectURL(blob);
-              } catch (error) {
-                  console.warn("이미지 파일 없음 - 그래프 생략", error);
-              }
+                // 그래프 업데이트
+                try {
+                    let figNums = await pyodide.runPythonAsync(`
+figs = []
+if "matplotlib" in sys.modules:
+    import matplotlib.pyplot as plt
+    
+    # 모든 figure 저장
+    fig_nums = plt.get_fignums()
+    for i, fig_num in enumerate(fig_nums):
+        plt.figure(fig_num)
+        plt.savefig(f"/plot_{i}.png")
 
-          } catch (error) {
-              outputElement.textContent = "에러: " + error;
-          }
-      }
+    figs = list(range(len(plt.get_fignums())))
+    plt.close("all")  # 모든 figure 닫기
+figs
+                    `);
 
-      // CodeMirror 설정 (VS Code 테마 적용)
-      let editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-          mode: "python",
-          lineNumbers: true,
-          matchBrackets: true,
-          indentUnit: 4,
-          theme: "material-palenight",  // VS Code 스타일 테마 적용
-      });
+                    figNums.forEach(i => {
+                        try {
+                            let imgData = pyodide.FS.readFile(`/plot_${i}.png`, { encoding: "binary" });
+                            let blob = new Blob([imgData], { type: "image/png" });
+                            let imgElement = document.createElement("img");
+                            imgElement.src = URL.createObjectURL(blob);
+                            imgElement.style = "max-width: 100%; margin-top: 10px; border-radius: 8px;";
+                            plotContainer.appendChild(imgElement);
+                        } catch (error) {
+                            console.warn(`이미지 로드 실패: plot_${i}.png`, error);
+                        }
+                    });
+                } catch (error) {
+                    console.warn("이미지 파일 없음 - 그래프 생략", error);
+                }
 
-      // Ctrl + Enter 키 이벤트 추가
-      editor.setOption("extraKeys", {
-          "Ctrl-Enter": function() {
-              runPythonCode();
-          }
-      });
-  </script>
+            } catch (error) {
+                outputElement.textContent = "에러: " + error;
+            }
+        }
+
+        // CodeMirror 설정 (VS Code 테마 적용)
+        let editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            mode: "python",
+            lineNumbers: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            theme: "material-palenight",  // VS Code 스타일 테마 적용
+        });
+
+        // Ctrl + Enter 키 이벤트 추가
+        editor.setOption("extraKeys", {
+            "Ctrl-Enter": function () {
+                runPythonCode();
+            }
+        });
+    </script>
 </body>
+
 </html>

@@ -323,6 +323,32 @@
             formulaDisplay.innerHTML = highlightFormula(initialTemplate);
             
             formulaContainer.appendChild(formulaBlock);
+            
+            formulaInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    const nextSibling = formulaBlock.nextElementSibling;
+                    if (nextSibling) {
+                        nextSibling.querySelector(".formula-input").focus();
+                    } else {
+                        const newBlock = createFormulaBlock();
+                        setTimeout(() => newBlock.formulaBlock.querySelector(".formula-input").focus(), 0);
+                    }
+                } else if  (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    const nextSibling = formulaBlock.nextElementSibling;
+                    if (nextSibling) {
+                        nextSibling.querySelector(".formula-input").focus();
+                    }
+                } else if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    const prevSibling = formulaBlock.previousElementSibling;
+                    if (prevSibling) {
+                        prevSibling.querySelector(".formula-input").focus();
+                    }
+                }
+            });
+            
             return formula;
         }
 

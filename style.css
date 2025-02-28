@@ -6,7 +6,7 @@
   --text-color: #333;
   --text-dim-color: #acacac;
   --background-color: #f0f0f0;
-  --hover-color: #eee;
+  --hover-color: #e8e8e8;
   --border-color: #ccc;
   --border-radius: 5px;
   --spacing-thin: 5px;
@@ -61,6 +61,7 @@ ul {
 
 .container {
   max-width: 800px;
+  width: 100%;
   margin: 0 auto;
   padding: var(--spacing-medium);
 }

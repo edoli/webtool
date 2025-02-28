@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/x-icon" href="../icon.ico">
+    <title>CSV File Viewer</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>        
+        .hidden {
+            height: 0;
+            padding: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+        
+        .table-container {
+            flex: 1 1 auto;
+            padding: 0;
+            overflow: auto;
+            height: 100vh; /* 전체 높이 사용 */
+            position: relative;
+        }
+        
+        #csv-table_wrapper th, #csv-table td {
+            border-top: None;
+            border-left: None;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4263eb;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background-color: #4263eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #364fc7;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        #global-drop-area {
+          display:none; 
+          position:absolute;
+          top:0;
+          left:0;
+          width:100%;
+          height:100%;
+          background-color:rgba(0,0,0,0.5);
+          z-index:1000;
+          justify-content:center;
+          align-items:center;
+          pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="header" class="container">
+        <div class="title">CSV 파일 뷰어</div>
+        
+        <div class="upload-area" id="upload-area">
+                
+            <div id="dropArea" class="drop-area">
+                <p>Drag and drop a CSV file here or click to select a file</p>
+                <input type="file" id="file-input" class="file-input" accept=".csv">
+            </div>
+            <div id="file-info" class="file-info"></div>
+            <div id="loading">
+                <div class="spinner"></div>
+                <p>파일 처리 중...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-container" id="table-container">
+        <table id="csv-table" class="display" style="width:100%"></table>
+        <div id="global-drop-area">
+            <div style="background-color:white; padding:30px; border-radius:8px; text-align:center;">
+                <h2>새 CSV 파일 업로드</h2>
+                <p>여기에 파일을 놓으세요</p>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/jquery.dataTables.min.css">
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="../../script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('file-input');
+            const fileInfo = document.getElementById('file-info');
+            const loading = document.getElementById('loading');
+            let dataTable = null;
+            
+            // 파일 선택 버튼 클릭 시 파일 입력 창 열기
+            dropArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // 파일 입력 변경 이벤트
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    processFile(file);
+                }
+            });
+            
+            // 전역 드래그 이벤트 처리
+            const globalDropArea = document.getElementById('global-drop-area');
+            const tableContainer = document.getElementById('table-container');
+            
+            // 드래그 이벤트 핸들러
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // 초기 드롭존 이벤트
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // 전역 문서 드래그 이벤트 (파일 로드 후)
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // 드래그 중 스타일 변경
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => {
+                    dropArea.classList.add('dragover');
+                }, false);
+                
+                // 전역 드래그 처리
+                document.addEventListener(eventName, (e) => {
+                    if (dataTable) { // 테이블이 이미 로드된 경우만
+                        globalDropArea.style.display = 'flex';
+                    }
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => {
+                    dropArea.classList.remove('dragover');
+                }, false);
+                
+                // 전역 드래그 종료 처리
+                document.addEventListener(eventName, (e) => {
+                  if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
+                    globalDropArea.style.display = 'none';
+                  }
+                }, false);
+            });
+            
+            // 파일 드롭 이벤트
+            dropArea.addEventListener('drop', (e) => {
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    processFile(file);
+                }
+            });
+            
+            // 전역 드롭 이벤트 (파일 로드 후 새 파일 업로드)
+            document.addEventListener('drop', (e) => {
+                if (dataTable) {
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                        processFile(file);
+                        globalDropArea.style.display = 'none';
+                    }
+                }
+            });
+            
+            // ESC 키 이벤트 처리 - 전체화면 모드에서 초기 화면으로 돌아가기
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && dataTable) {
+                    // 헤더와 업로드 영역 다시 표시
+                    document.getElementById('header').classList.remove('hidden');
+                    
+                    // 테이블 컨테이너 크기 조정
+                    tableContainer.style.height = '';
+                    
+                    // 테이블 제거
+                    dataTable.destroy();
+                    document.getElementById('csv-table').innerHTML = '';
+                    dataTable = null;
+                }
+            });
+            
+            // 파일 처리 함수
+            function processFile(file) {
+                // CSV 파일만 허용
+                if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                    alert('CSV 파일만 업로드 가능합니다.');
+                    return;
+                }
+                
+                // 파일 정보 표시 (숨겨진 상태라도 정보 업데이트)
+                fileInfo.textContent = `파일명: ${file.name} | 크기: ${formatFileSize(file.size)}`;
+                
+                // 로딩 표시
+                loading.style.display = 'block';
+                
+                // 기존 테이블 제거
+                if (dataTable) {
+                    dataTable.destroy();
+                    document.getElementById('csv-table').innerHTML = '';
+                }
+                
+                // CSV 파일 파싱
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        renderTable(results.data, results.meta.fields);
+                        loading.style.display = 'none';
+                    },
+                    error: function(error) {
+                        console.error('CSV 파싱 오류:', error);
+                        alert('CSV 파일 처리 중 오류가 발생했습니다.');
+                        loading.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 테이블 렌더링 함수
+            function renderTable(data, headers) {
+                // 데이터가 없는 경우
+                if (data.length === 0) {
+                    alert('CSV 파일에 데이터가 없습니다.');
+                    return;
+                }
+                
+                // 헤더와 업로드 영역 숨기기
+                document.getElementById('header').classList.add('hidden');
+                
+                // 전체화면 테이블 표시
+                const tableContainer = document.getElementById('table-container');
+                tableContainer.style.height = '100vh';
+                
+                // DataTables 초기화
+                dataTable = $('#csv-table').DataTable({
+                    data: data,
+                    columns: headers.map(header => {
+                        return { title: header, data: header };
+                    }),
+                    responsive: true,
+                    paging: false,       // 페이징 제거
+                    info: false,         // 정보 표시 제거
+                    searching: false,    // 검색 제거
+                    lengthChange: false, // 페이지 크기 변경 제거
+                    ordering: true,      // 정렬 기능 유지
+                    dom: 't'             // 테이블만 표시
+                });
+            }
+            
+            // 파일 크기 포맷 함수
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+        });
+    </script>
+</body>
+</html>

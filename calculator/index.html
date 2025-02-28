@@ -400,7 +400,7 @@
             const tmpContext = {};
             
             formulas.forEach((formula, index) => {
-                const result = calculateResult(formula.formulaTemplate, tmpContext);
+                const result = calculateResult(formula.formulaTemplate, variables, tmpContext);
 
                 if (typeof result === 'number') {
                     tmpContext[`r${index + 1}`] = result;

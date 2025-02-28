@@ -295,6 +295,11 @@
                     fixedHeader: true    // 헤더 고정
                 });
             }
+
+            $("#table-container").on("scroll", function () {
+                var scrollLeft = $(this).scrollLeft(); // #table-container의 스크롤 위치
+                $(".dtfh-floatingparent").css("transform", "translateX(-" + scrollLeft + "px)"); // 스크롤된 만큼 left 이동
+            });
             
             // 파일 크기 포맷 함수
             function formatFileSize(bytes) {

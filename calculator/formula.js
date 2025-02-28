@@ -19,7 +19,7 @@ const mathPredefined = { ...mathFunctions, ...mathConstants };
 // 변수 추출 함수
 function extractVariables(formula) {
     const predefinedNames = Object.keys(mathPredefined).join('|');
-    const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b(?!r\\d)[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
+    const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b(?!r\\d)[a-zA-Z][a-zA-Z0-9_]*\\b`, 'g');
     const matches = formula.match(variableRegex) || [];
     // 함수명이나 상수명과 겹치지 않는 것만 변수로 추출
     const vars = new Set(matches.filter(match => !mathPredefined.hasOwnProperty(match)));

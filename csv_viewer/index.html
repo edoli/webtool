@@ -8,10 +8,7 @@
     <link rel="stylesheet" href="../style.css">
     <style>        
         .hidden {
-            height: 0;
-            padding: 0;
-            overflow: hidden;
-            opacity: 0;
+            display: none;
         }
         
         .table-container {
@@ -108,7 +105,7 @@
         </div>
     </div>
     
-    <div class="table-container" id="table-container">
+    <div class="table-container hidden" id="table-container">
         <table id="csv-table" class="display" style="width:100%"></table>
         <div id="global-drop-area">
             <div style="background-color:white; padding:30px; border-radius:8px; text-align:center;">
@@ -220,6 +217,7 @@
                 if (e.key === 'Escape' && dataTable) {
                     // 헤더와 업로드 영역 다시 표시
                     document.getElementById('header').classList.remove('hidden');
+                    tableContainer.classList.add('hidden');
                     
                     // 테이블 컨테이너 크기 조정
                     tableContainer.style.height = '';
@@ -278,10 +276,7 @@
                 
                 // 헤더와 업로드 영역 숨기기
                 document.getElementById('header').classList.add('hidden');
-                
-                // 전체화면 테이블 표시
-                const tableContainer = document.getElementById('table-container');
-                tableContainer.style.height = '100vh';
+                tableContainer.classList.remove('hidden');
                 
                 // DataTables 초기화
                 dataTable = $('#csv-table').DataTable({

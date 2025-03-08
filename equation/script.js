@@ -138,16 +138,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         loading.style.display = 'block';
         
-        // 캔버스를 이미지로 변환
-        const imageData = canvas.toDataURL('image/png').split(',')[1];
-        
         // Mathpix API 요청
-        convertToLatex(imageData, appId, appKey);
+        convertToLatex(strokes, appId, appKey);
     });
     
-    async function convertToLatex(imageData, appId, appKey) {
+    async function convertToLatex(strokes, appId, appKey) {
         try {
-            const response = await fetch('https://api.mathpix.com/v3/text', {
+            const formattedStrokes = {
+                strokes: {
+                    x: strokes.map(stroke => stroke.map(point => point.x)),
+                    y: strokes.map(stroke => stroke.map(point => point.y))
+                }
+            };
+            
+            const response = await fetch('https://api.mathpix.com/v3/strokes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -155,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'app_key': appKey
                 },
                 body: JSON.stringify({
-                    src: `data:image/png;base64,${imageData}`,
+                    strokes: formattedStrokes,
                     formats: ["latex_styled"],
                     data_options: {
                         include_asciimath: true,

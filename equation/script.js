@@ -135,12 +135,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineTo(point.x, point.y);
         ctx.stroke();
     }
-    
+
     function getPoint(e) {
         const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width; // 너비 비율
+        const scaleY = canvas.height / rect.height; // 높이 비율
+        
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
         };
     }
     

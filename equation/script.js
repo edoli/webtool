@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('drawingCanvas');
     const ctx = canvas.getContext('2d');
     const clearBtn = document.getElementById('clearBtn');
+    const eraserBtn = document.getElementById('eraserBtn');
     const convertBtn = document.getElementById('convertBtn');
     const latexOutput = document.getElementById('latexOutput');
     const renderedOutput = document.getElementById('renderedOutput');
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const appKeyInput = document.getElementById('appKey');
 
     let isDrawing = false;
+    let isErasing = false;
     let strokes = [];
     let currentStroke = [];
 
@@ -33,18 +35,85 @@ document.addEventListener('DOMContentLoaded', function() {
     clearCanvas();
     
     // 마우스 이벤트 처리
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('mousedown', function(e) {
+        isDrawing = true;
+        if (isErasing) {
+            eraseStroke(e);
+        } else {
+            startDrawing(e);
+        }
+    });
+
+    canvas.addEventListener('mousemove', function(e) {
+        if (isDrawing) {
+            if (isErasing) {
+                eraseStroke(e);
+            } else {
+                draw(e);
+            }
+        }
+    });
+
+    canvas.addEventListener('mouseup', function() {
+        isDrawing = false;
+        if (currentStroke.length > 0) {
+            strokes.push([...currentStroke]);
+        }
+        currentStroke = [];
+    });
+
+    canvas.addEventListener('mouseout', function() {
+        isDrawing = false;
+    });
+
+    function eraseStroke(e) {
+        const point = getPoint(e);
+        const eraseRadius = 4; // 지우개 범위 (픽셀)
+        
+        strokes = strokes.filter(stroke =>
+            !stroke.some(p =>
+                Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) < eraseRadius
+            )
+        );
+
+        redrawCanvas();
+    }
+
+    function redrawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'black';
+
+        strokes.forEach(stroke => {
+            ctx.beginPath();
+            ctx.moveTo(stroke[0].x, stroke[0].y);
+            stroke.forEach(point => {
+                ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+        });
+    }
+
+    canvas.addEventListener('contextmenu', function(e) {
+        e.preventDefault(); // 마우스 오른쪽 클릭 메뉴 비활성화
+    });
     
+    eraserBtn.addEventListener('click', function() {
+        isErasing = !isErasing;
+        eraserBtn.textContent = isErasing ? '연필 모드' : '지우개 모드';
+    });
+
     // 터치 이벤트 처리
     canvas.addEventListener('touchstart', handleTouchStart);
     canvas.addEventListener('touchmove', handleTouchMove);
     canvas.addEventListener('touchend', handleTouchEnd);
     
     function startDrawing(e) {
-        isDrawing = true;
         currentStroke = [];
         const point = getPoint(e);
         currentStroke.push(point);
@@ -65,16 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.lineTo(point.x, point.y);
         ctx.stroke();
-    }
-    
-    function stopDrawing() {
-        if (!isDrawing) return;
-        
-        isDrawing = false;
-        if (currentStroke.length > 0) {
-            strokes.push([...currentStroke]);
-        }
-        currentStroke = [];
     }
     
     function getPoint(e) {

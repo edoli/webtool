@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStroke = [];
 
     // 저장된 API Key 및 Secret 불러오기
-    appIdInput.value = localStorage.getItem('appId') || '';
-    appKeyInput.value = localStorage.getItem('appKey') || '';
+    appIdInput.value = localStorage.getItem('mathpix_appId') || '';
+    appKeyInput.value = localStorage.getItem('mathpix_appKey') || '';
     
     // 캔버스 초기화 함수
     function clearCanvas() {
@@ -133,8 +133,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // 입력된 API 정보 자동 저장
-        localStorage.setItem('appId', appId);
-        localStorage.setItem('appKey', appKey);
+        localStorage.setItem('mathpix_appId', appId);
+        localStorage.setItem('mathpix_appKey', appKey);
 
         loading.style.display = 'block';
         

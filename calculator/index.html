@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/x-icon" href="../icon.ico">
     <title>Formula Calculator</title>
     <link rel="stylesheet" href="../style.css">
     <style>
@@ -174,25 +175,8 @@
             </div>
         </div>
     </div>
-
+    <script src="./formula.js"></script>
     <script>
-        // Get all functions and constants in Math
-        const mathFunctions = {
-            rad: (deg) => deg * Math.PI / 180.0,
-            deg: (rad) => rad * 180 / Math.PI,
-        };
-
-        const mathConstants = {};
-
-        Object.getOwnPropertyNames(Math).forEach(name => {
-            if (typeof Math[name] === 'function') {
-                mathFunctions[name] = Math[name];
-            } else {
-                mathConstants[name] = Math[name];
-            }
-        });
-
-        const mathPredefined = { ...mathFunctions, ...mathConstants};
 
         // State 관리
         const formulas = [];
@@ -322,38 +306,33 @@
             formulaDisplay.innerHTML = highlightFormula(initialTemplate);
             
             formulaContainer.appendChild(formulaBlock);
+            
+            formulaInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    const nextSibling = formulaBlock.nextElementSibling;
+                    if (nextSibling) {
+                        nextSibling.querySelector(".formula-input").focus();
+                    } else {
+                        const newBlock = createFormulaBlock();
+                        setTimeout(() => newBlock.formulaBlock.querySelector(".formula-input").focus(), 0);
+                    }
+                } else if  (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    const nextSibling = formulaBlock.nextElementSibling;
+                    if (nextSibling) {
+                        nextSibling.querySelector(".formula-input").focus();
+                    }
+                } else if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    const prevSibling = formulaBlock.previousElementSibling;
+                    if (prevSibling) {
+                        prevSibling.querySelector(".formula-input").focus();
+                    }
+                }
+            });
+            
             return formula;
-        }
-
-        // 변수 추출 함수
-        function extractVariables(formula) {
-            const predefinedNames = Object.keys(mathPredefined).join('|');
-            const variableRegex = new RegExp(`(?<!(?:${predefinedNames}))\\b(?!r\\d)[a-zA-Z][a-zA-Z0-9]*\\b`, 'g');
-            const matches = formula.match(variableRegex) || [];
-            // 함수명이나 상수명과 겹치지 않는 것만 변수로 추출
-            const vars = new Set(matches.filter(match => !mathPredefined.hasOwnProperty(match)));
-            return Array.from(vars);
-        }
-
-
-        // 결과 계산 함수
-        function calculateResult(formulaObj, tmpContext) {
-            try {
-                const context = {
-                    ...mathPredefined,
-                    ...tmpContext,
-                    ...Object.fromEntries(
-                        Object.entries(variables).map(([key, value]) => [key, Number(value)])
-                    )
-                };
-
-                const formulaT = formulaObj.formulaTemplate.replace("×", "*").replace("÷", "/");
-                const calculate = new Function(...Object.keys(context), `return ${formulaT}`);
-                const result = calculate(...Object.values(context));
-                return result;
-            } catch (error) {
-                return 'Error: ' + error.message;
-            }
         }
 
         // 변수 입력 필드 업데이트
@@ -421,7 +400,7 @@
             const tmpContext = {};
             
             formulas.forEach((formula, index) => {
-                const result = calculateResult(formula, tmpContext);
+                const result = calculateResult(formula.formulaTemplate, variables, tmpContext);
 
                 if (typeof result === 'number') {
                     tmpContext[`r${index + 1}`] = result;

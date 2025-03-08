@@ -4,75 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>그림을 수식으로 변환하기</title>
+    <link rel="icon" type="image/x-icon" href="../../icon.ico">
+    <link rel="stylesheet" href="../../style.css">
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        
         .container {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 8px;
+        }
+
+        .title {
+            margin-bottom: 0;
         }
         
         canvas {
-            border: 2px solid #333;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
             cursor: crosshair;
         }
         
         .controls {
-            margin-bottom: 20px;
             display: flex;
             gap: 10px;
         }
-        
-        button {
-            padding: 10px 15px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        button:hover {
-            background-color: #45a049;
-        }
-        
+
         .output {
-            margin-top: 20px;
-            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
         }
         
         .latex-output {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 15px;
-            background-color: #f5f5f5;
+            background-color: #f9f9f9;
             border-radius: 5px;
             min-height: 50px;
-            margin-bottom: 15px;
             white-space: pre-wrap;
             word-break: break-all;
         }
         
         .rendered-output {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 15px;
             background-color: #f9f9f9;
             border-radius: 5px;
             min-height: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
         
         .loading {
@@ -86,32 +68,34 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-    <h1>그림을 수식으로 변환하기</h1>
     <div class="container">
-        <div>
-            <label for="appId">App ID:</label>
-            <input type="text" id="appId" placeholder="App ID 입력">
-            <label for="appKey">App Key:</label>
-            <input type="text" id="appKey" placeholder="App Key 입력">
+        <div class="title">Scribble to LaTeX</div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; flex: 1;">
+                <label for="appId" style="text-wrap: nowrap;">App ID:</label>
+                <input type="text" id="appId" placeholder="App ID 입력" style="flex: 1">
+            </div>
+            <div style="display: flex; flex: 1;">
+                <label for="appKey" style="text-wrap: nowrap;">App Key:</label>
+                <input type="text" id="appKey" placeholder="App Key 입력" style="flex: 1">
+            </div>
         </div>
 
         <canvas id="drawingCanvas" width="600" height="300"></canvas>
         <div class="controls">
-            <button id="eraserBtn">지우개 모드</button>
-            <button id="clearBtn">전체 지우기</button>
-            <button id="convertBtn">수식으로 변환</button>
+            <button class="button" id="eraserBtn">지우개 모드</button>
+            <button class="button" id="clearBtn">전체 지우기</button>
+            <button class="button" id="convertBtn">수식으로 변환</button>
         </div>
         <div class="loading" id="loading">변환 중입니다...</div>
         <div class="output">
-            <h3>LaTeX 코드:</h3>
-            <div class="latex-output" id="latexOutput">아직 수식이 변환되지 않았습니다.</div>
-            <h3>렌더링된 수식:</h3>
-            <div class="rendered-output" id="renderedOutput">
-                수식이 여기에 표시됩니다.
-            </div>
+            <div class="latex-output" id="latexOutput"></div>
+            <div class="rendered-output" id="renderedOutput"></div>
         </div>
     </div>
 
+    <script src="../script.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

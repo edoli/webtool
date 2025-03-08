@@ -115,11 +115,13 @@ ul {
 /* common */
 .button {
   display: inline-flex;
+  font-size: 16px;
   padding: var(--spacing-thin) var(--spacing-small);
   background-color: var(--primary-color);
   align-items: center;
   color: white;
   text-decoration: none;
+  border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: var(--default-transition);
@@ -135,6 +137,7 @@ ul {
 
 .button-outline {
   display: inline-flex;
+  font-size: 16px;
   padding: var(--spacing-thin) var(--spacing-small);
   color: var(--text-color);
   border: 1px solid var(--border-color);
@@ -158,6 +161,7 @@ ul {
 
 .button-circle {
   display: flex;
+  font-size: 16px;
   align-items: center;
   justify-content: center;
   background-color: var(--primary-color);

@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         strokes = [];
         currentStroke = [];
-        latexOutput.textContent = '아직 수식이 변환되지 않았습니다.';
+        latexOutput.textContent = 'Latex 코드가 여기 표시됩니다.';
         renderedOutput.innerHTML = '수식이 여기에 표시됩니다.';
     }
     

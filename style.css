@@ -31,10 +31,6 @@ body {
   color: var(--text-color);
 }
 
-svg {
-  fill: var(--text-color);
-}
-
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-medium);
   color: var(--text-color);
@@ -180,6 +176,22 @@ ul {
 
 .button-circle:hover {
   background-color: color-mix(in srgb, var(--primary-color) 80%, black)
+}
+
+.button-icon {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--default-transition);
+}
+
+.button-icon:hover {
+    background: rgba(0, 0, 0, 0.1);
 }
 
 /* Inputs */

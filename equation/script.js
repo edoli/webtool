@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearBtn = document.getElementById('clearBtn');
     const eraserBtn = document.getElementById('eraserBtn');
     const convertBtn = document.getElementById('convertBtn');
-    const latexOutput = document.getElementById('latexOutput');
+    const latexOutputText = document.getElementById('latexOutputText');
+    const copyLatexBtn = document.getElementById('copyLatexBtn');
     const renderedOutput = document.getElementById('renderedOutput');
     const loading = document.getElementById('loading');
     
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         strokes = [];
         currentStroke = [];
-        latexOutput.textContent = 'Latex 코드가 여기 표시됩니다.';
+        latexOutputText.textContent = 'Latex 코드가 여기 표시됩니다.';
         renderedOutput.innerHTML = '수식이 여기에 표시됩니다.';
     }
     
@@ -233,18 +234,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.latex_styled) {
-                latexOutput.textContent = data.latex_styled;
+                latexOutputText.textContent = data.latex_styled;
                 renderLatex(data.latex_styled);
             } else if (data.error) {
-                latexOutput.textContent = `오류: ${data.error}`;
+                latexOutputText.textContent = `오류: ${data.error}`;
                 renderedOutput.innerHTML = '오류가 발생했습니다.';
             } else {
-                latexOutput.textContent = '변환할 수 있는 수식을 찾을 수 없습니다.';
+                latexOutputText.textContent = '변환할 수 있는 수식을 찾을 수 없습니다.';
                 renderedOutput.innerHTML = '인식된 수식이 없습니다.';
             }
         } catch (error) {
             console.error('Error:', error);
-            latexOutput.textContent = `API 오류: ${error.message}`;
+            latexOutputText.textContent = `API 오류: ${error.message}`;
             renderedOutput.innerHTML = '오류가 발생했습니다.';
         } finally {
             loading.style.display = 'none';

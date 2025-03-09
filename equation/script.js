@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     convertBtn.addEventListener('click', function() {
         if (strokes.length === 0) {
-            alert('먼저 수식을 그려주세요!');
+            showToast('먼저 수식을 그려주세요!', type='error');
             return;
         }
 
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const appKey = appKeyInput.value.trim();
 
         if (!appId || !appKey) {
-            alert('API Key와 API Secret을 입력하세요.');
+            showToast('API Key와 API Secret을 입력하세요.', type='error');
             return;
         }
 
@@ -203,6 +203,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mathpix API 요청
         convertToLatex(strokes, appId, appKey);
+    });
+
+    copyLatexBtn.addEventListener('click', function () {
+        const latexText = latexOutputText.textContent;
+        if (!latexText.trim()) {
+            showToast("복사할 LaTeX 코드가 없습니다.", type='error');
+            return;
+        }
+    
+        navigator.clipboard.writeText(latexText)
+            .then(() => {
+                showToast("LaTeX 코드가 클립보드에 복사되었습니다!");
+            })
+            .catch(err => {
+                showToast("복사 중 오류가 발생했습니다.", type='error');
+                console.error('클립보드 복사 실패:', err);
+            });
     });
     
     async function convertToLatex(strokes, appId, appKey) {

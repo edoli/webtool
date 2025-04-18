@@ -185,6 +185,7 @@ import numpy as np
 import cv2
 import io
 import base64
+import micropip
                 `);
                 status.textContent = "Python environment ready";
             } catch (error) {
@@ -257,16 +258,33 @@ import cv2
 import io
 import base64
 
+is_heif = False
+if file_bytes[4:8] == b'ftyp':
+    brand = file_bytes[8:12].decode(errors="ignore")
+    if brand in ("heic", "heif", "mif1", "msf1", "avif", "avis"):
+        is_heif = True
+
+
 # Open image from bytes
-nparr = np.frombuffer(file_bytes, np.uint8)
-image = cv2.imdecode(nparr, -1)
-if image.ndim == 3:
-    if image.shape[2] == 3:
-        # Convert BGR to RGB
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    elif image.shape[2] == 4:
-        # Convert BGRA to RGBA
-        image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
+if is_heif:
+    # Decode HEIC/HEIF image
+    import micropip
+    await micropip.install("pyheif")
+    import pyheif
+    heif_file = pyheif.read(file_bytes)
+    stride = heif_file.stride
+    image = np.frombuffer(heif_file.data, dtype=np.uint8).reshape((heif_file.size[1], stride))
+    image = image[:, :heif_file.size[0] * 3].reshape((heif_file.size[1], heif_file.size[0], -1))
+else:
+    nparr = np.frombuffer(file_bytes, np.uint8)
+    image = cv2.imdecode(nparr, -1)
+    if image.ndim == 3:
+        if image.shape[2] == 3:
+            # Convert BGR to RGB
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        elif image.shape[2] == 4:
+            # Convert BGRA to RGBA
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
                     `);
                     
                     // Run user code
@@ -345,6 +363,8 @@ else:
                         }
                     }
                 } catch (error) {
+                    const output = pyodide.globals.get("_console_output");
+                    consoleOutput.textContent += output;
                     consoleOutput.textContent += `\nError processing ${file.name}: ${error.message}\n`;
                 }
             }

@@ -22,9 +22,66 @@
 
     <link rel="stylesheet" href="../../style.css">
 
-    <style>
-        #code {
-            flex: 1;
+    <style>    
+        .files-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background-color: #f5f5f5;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        .remove-btn {
+            background-color: transparent;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .remove-btn:hover {
+            background-color: #ff4d4d;
+            color: white;
+            border-color: #ff4d4d;
+            transform: scale(1.05);
+        }
+
+        .run-button-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .output-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .console-output {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -38,6 +95,7 @@
             <p>Drag and drop motion photos here or click to select files</p>
             <input type="file" id="fileElem" accept="image/*" multiple>
         </div>
+        <div class="message-box" style="margin-bottom: 0;">파이썬 코드로 이미지 처리를 할 수 있습니다. (입력 이미지: image 변수 사용)</div>
         <textarea id="code">image</textarea>
         <div id="status" class="message-box"></div>
         <div id="files"></div>
@@ -109,7 +167,7 @@
             
             const runButton = document.createElement('button');
             runButton.textContent = 'Run Script (Ctrl+Enter)';
-            runButton.className = 'run-button';
+            runButton.className = 'button button-large';
             runButton.onclick = runPythonCode;
             
             runButtonContainer.appendChild(runButton);
@@ -202,6 +260,13 @@ import base64
 # Open image from bytes
 nparr = np.frombuffer(file_bytes, np.uint8)
 image = cv2.imdecode(nparr, -1)
+if image.ndim == 3:
+    if image.shape[2] == 3:
+        # Convert BGR to RGB
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    elif image.shape[2] == 4:
+        # Convert BGRA to RGBA
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
                     `);
                     
                     // Run user code
@@ -229,6 +294,13 @@ is_array = isinstance(direct_result, np.ndarray)
 result_b64 = None
 
 if is_array:
+    if direct_result.ndim == 3:
+        if image.shape[2] == 3:
+            # Convert RGB to BGR
+            direct_result = cv2.cvtColor(direct_result, cv2.COLOR_RGB2BGR)
+        elif image.shape[2] == 4:
+            # Convert RGBA to BGRA
+            direct_result = cv2.cvtColor(direct_result, cv2.COLOR_RGBA2BGRA)
     try:
         # PNG로 변환
         _, buffer = cv2.imencode('.png', direct_result)
@@ -247,33 +319,23 @@ else:
                         if (resultB64) {
                             // Create preview container
                             const previewContainer = document.createElement('div');
-                            previewContainer.className = 'preview-item';
-                            
-                            // Add file name
-                            const fileNameLabel = document.createElement('div');
-                            fileNameLabel.className = 'preview-filename';
-                            fileNameLabel.textContent = file.name;
-                            previewContainer.appendChild(fileNameLabel);
-                            
-                            // Add image preview
-                            const img = document.createElement('img');
-                            img.src = resultB64;
-                            img.className = 'preview-image';
-                            previewContainer.appendChild(img);
-                            
-                            // Add download button
-                            const downloadBtn = document.createElement('a');
-                            downloadBtn.textContent = 'Download';
-                            downloadBtn.className = 'download-btn';
-                            downloadBtn.href = resultB64;
-                            downloadBtn.download = `processed_${file.name.split('.')[0]}.png`;
-                            previewContainer.appendChild(downloadBtn);
+                            previewContainer.className = 'file-item';
+
+                            previewContainer.innerHTML = `
+                                <div class="flex-1">
+                                    <div class="file-name">File ${i + 1}: ${file.name}</div>
+                                    <a href="${resultB64}" download="processed_${file.name.split('.')[0]}.png" class="button">Download</a>
+                                </div>
+                                <div class="flex-1">
+                                    <img src="${resultB64}" class="fill-parent-width" alt="Preview Image">
+                                </div>
+                            `;
                             
                             previewArea.appendChild(previewContainer);
                             
                             // Auto download if checkbox is checked
                             if (autoDownload.checked) {
-                                downloadBtn.click();
+                                previewContainer.querySelector('a').click();
                             }
                         } else if (isArray) {
                             consoleOutput.textContent += `\nCouldn't render numpy array as image. Check the shape and dtype.\n`;

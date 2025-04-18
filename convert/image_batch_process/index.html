@@ -312,6 +312,9 @@ is_array = isinstance(direct_result, np.ndarray)
 result_b64 = None
 
 if is_array:
+    if direct_result.dtype != np.uint8:
+        np.clip(direct_result, 0, 255, out=direct_result)
+        direct_result = direct_result.astype(np.uint8)
     if direct_result.ndim == 3:
         if image.shape[2] == 3:
             # Convert RGB to BGR

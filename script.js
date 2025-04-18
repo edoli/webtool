@@ -65,3 +65,25 @@ checkbox.forEach(checkbox => {
     `;
     checkbox.parentNode.replaceChild(label, checkbox);
 });
+
+/* Toast */
+let toastContainer;
+function showToast(message, type = "primary") {
+    if (toastContainer === undefined || toastContainer === null) {
+        toastContainer = document.createElement("div");
+        toastContainer.id = 'toast-container';
+        document.getElementsByTagName('body')[0].appendChild(toastContainer);
+    }
+
+    const toast = document.createElement("div");
+    toast.classList.add("toast", `toast-${type}`);
+    toast.textContent = message;
+
+    toast.addEventListener("click", () => toast.remove());
+
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}

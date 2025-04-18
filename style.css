@@ -31,10 +31,6 @@ body {
   color: var(--text-color);
 }
 
-svg {
-  fill: var(--text-color);
-}
-
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-medium);
   color: var(--text-color);
@@ -117,11 +113,13 @@ ul {
 /* common */
 .button {
   display: inline-flex;
+  font-size: 16px;
   padding: var(--spacing-thin) var(--spacing-small);
   background-color: var(--primary-color);
   align-items: center;
   color: white;
   text-decoration: none;
+  border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: var(--default-transition);
@@ -137,6 +135,7 @@ ul {
 
 .button-outline {
   display: inline-flex;
+  font-size: 16px;
   padding: var(--spacing-thin) var(--spacing-small);
   color: var(--text-color);
   border: 1px solid var(--border-color);
@@ -160,6 +159,7 @@ ul {
 
 .button-circle {
   display: flex;
+  font-size: 16px;
   align-items: center;
   justify-content: center;
   background-color: var(--primary-color);
@@ -178,6 +178,22 @@ ul {
 
 .button-circle:hover {
   background-color: color-mix(in srgb, var(--primary-color) 80%, black)
+}
+
+.button-icon {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--default-transition);
+}
+
+.button-icon:hover {
+    background: rgba(0, 0, 0, 0.1);
 }
 
 /* Inputs */
@@ -358,4 +374,45 @@ input[type="number"], input[type="text"] {
   background-color: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
+}
+
+/* Toast */
+#toast-container {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.toast {
+  min-width: calc(min(100vw - 32px, 350px));
+  max-width: 350px;
+  padding: 12px 20px;
+  color: white;
+  font-size: 16px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transform: translateY(100%);
+  animation: fadeInBottom 0.5s forwards, fadeOut 0.5s 2.5s forwards;
+  transition: all 0.5s ease-in-out;
+  cursor: pointer;
+  margin-top: -58px;
+}
+
+.toast-primary { background-color: #007bff; }
+.toast-success { background-color: #28a745; }
+.toast-warning { background-color: #ffc107; color: black; }
+.toast-error { background-color: #dc3545; }
+
+@keyframes fadeInBottom {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); margin-top: 0; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateX(0); pointer-events: none; }
+  to { opacity: 0; transform: translateX(100%); }
 }

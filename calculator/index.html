@@ -13,6 +13,11 @@
             gap: var(--spacing-medium);
         }
 
+        #formula-options {
+            display: flex;
+            align-items: center;
+        }
+
         #formula-container {
             display: flex;
             flex-direction: column;
@@ -150,6 +155,11 @@
 <body>
     <div class="card-container">
         <div class="card-content">
+            <div id="formula-options">
+                <!-- Options   -->
+                <checkbox id="toggle-radian" class="toggle-button" check-type="checkswitch">Use degree</checkbox>
+
+            </div>
             <div id="formula-container">
             </div>
 
@@ -175,6 +185,7 @@
             </div>
         </div>
     </div>
+    <script src="../script.js"></script>
     <script src="./formula.js"></script>
     <script>
 
@@ -253,6 +264,7 @@
         const functionsList = document.getElementById('functions-list');
         const constantsList = document.getElementById('constants-list');
         const errorBox = document.getElementById('error-box');
+        const toggleRadian = document.getElementById('toggle-radian');
 
         // 함수 목록 표시
         functionsList.textContent = Object.keys(mathFunctions).join(', ');
@@ -260,7 +272,13 @@
         // 상수 목록 표시
         constantsList.textContent = Object.keys(mathConstants).join(', ');
 
+        // toggle-radian 변경 이벤트 리스너
+        toggleRadian.addEventListener('change', () => {
+            mathOptions.useDegree = toggleRadian.checked;
+            updateDisplay();
+        });
         
+
         function createFormulaBlock(initialTemplate = "") {
             const formulaBlock = document.createElement('div');
             formulaBlock.className = 'formula-block';
@@ -371,7 +389,8 @@
         function saveStateToURL() {
             const encodedFormula = encodeURIComponent(btoa(formulas.map(formula => formula.formulaTemplate)));
             const encodedVariables = encodeURIComponent(btoa(JSON.stringify(variables)));
-            const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}`;
+            const encodedOptions = encodeURIComponent(btoa(JSON.stringify(mathOptions)));
+            const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}&o=${encodedOptions}`;
             history.replaceState(null, '', url);
         }
 
@@ -380,6 +399,7 @@
             const params = new URLSearchParams(window.location.search);
             const formulaParam = params.get('f');
             const variablesParam = params.get('v');
+            const optionParam = params.get('o');
 
             if (formulaParam) {
                 const formulaTemplates = atob(decodeURIComponent(formulaParam)).split(",");
@@ -391,6 +411,10 @@
             }
             if (variablesParam) {
                 Object.assign(variables, JSON.parse(atob(decodeURIComponent(variablesParam))));
+            }
+            if (optionParam) {
+                Object.assign(mathOptions, JSON.parse(atob(decodeURIComponent(optionParam))));
+                toggleRadian.checked = mathOptions.useDegree;
             }
         }
 

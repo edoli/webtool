@@ -54,13 +54,14 @@ dropAreas.forEach(dropArea => {
     }
 });
 
-const checkbox = document.querySelectorAll('checkbox');
-checkbox.forEach(checkbox => {
+const checkboxs = document.querySelectorAll('checkbox');
+checkboxs.forEach(checkbox => {
+    const checkType = checkbox.getAttribute('check-type') || 'checkmark';
     const label = document.createElement('label');
     label.className += ' checkbox-wrapper';
     label.innerHTML = `
         <input type="checkbox" id="${checkbox.id}">
-        <span class="checkmark"></span>
+        <span class="${checkType}"></span>
         ${checkbox.textContent}
     `;
     checkbox.parentNode.replaceChild(label, checkbox);

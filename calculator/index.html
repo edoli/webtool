@@ -355,8 +355,7 @@
 
         // 변수 입력 필드 업데이트
         function updateVariableInputs() {
-            const varsInFormula = [...new Set(
-                formulas.map(formula => extractVariables(formula.formulaTemplate)).flat())];
+            const varsInFormula = [...new Set(formulas.map(formula => extractVariables(formula.formulaTemplate)).flat())];
             
             // 새로운 변수 객체 생성
             varsInFormula.forEach(variable => {
@@ -387,8 +386,14 @@
 
         // 상태를 URL에 저장하는 함수
         function saveStateToURL() {
+            const varsInFormula = [...new Set(formulas.map(formula => extractVariables(formula.formulaTemplate)).flat())];
+            const variablesInUse = {};
+            varsInFormula.forEach(variable => {
+                variablesInUse[variable] = variables[variable];
+            });
+            
             const encodedFormula = encodeURIComponent(btoa(formulas.map(formula => formula.formulaTemplate)));
-            const encodedVariables = encodeURIComponent(btoa(JSON.stringify(variables)));
+            const encodedVariables = encodeURIComponent(btoa(JSON.stringify(variablesInUse)));
             const encodedOptions = encodeURIComponent(btoa(JSON.stringify(mathOptions)));
             const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}&o=${encodedOptions}`;
             history.replaceState(null, '', url);

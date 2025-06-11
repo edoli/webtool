@@ -80,11 +80,18 @@ function extractVariables(formula) {
 // 결과 계산 함수
 function calculateResult(formula, variables, tmpContext) {
     try {
+        // TODO: varsInFormula 계산하는게 3군데에 있음. 나중에 통합해야할듯
+        const varsInFormula = [...new Set(formulas.map(formula => extractVariables(formula.formulaTemplate)).flat())];
+        const variablesInUse = {};
+        varsInFormula.forEach(variable => {
+            variablesInUse[variable] = variables[variable];
+        });
+
         const context = {
             ...mathPredefined,
             ...tmpContext,
             ...Object.fromEntries(
-                Object.entries(variables).map(([key, value]) => [key, Number(value)])
+                Object.entries(variablesInUse).map(([key, value]) => [key, Number(value)])
             )
         };
 

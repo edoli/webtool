@@ -150,6 +150,15 @@
 
         .variable-input {
             flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .variable-input-focused {
+            background-color: #fff3cd;
+            border: 2px solid #cc6600;
+            border-radius: 4px;
+            box-shadow: 0 0 4px rgba(204, 102, 0, 0.3);
+            transition: all 0.3s ease;
         }
 
         .functions-info, .constants-info {
@@ -203,6 +212,54 @@
         const formulas = [];
         const variables = {};
         let focusedVariable = null;
+        let cursorVariable = null;
+
+        // 커서 위치에서 변수 감지
+        function getVariableAtCursor(input) {
+            const text = input.value;
+            const cursorPos = input.selectionStart;
+            
+            // 커서 위치를 기준으로 앞뒤 문자 확인
+            let start = cursorPos;
+            let end = cursorPos;
+            
+            // 뒤로 이동하면서 변수 시작점 찾기
+            while (start > 0 && /[a-zA-Z0-9]/.test(text[start - 1])) {
+                start--;
+            }
+            
+            // 앞으로 이동하면서 변수 끝점 찾기
+            while (end < text.length && /[a-zA-Z0-9]/.test(text[end])) {
+                end++;
+            }
+            
+            if (start < end) {
+                const word = text.substring(start, end);
+                // 변수인지 확인 (함수나 상수가 아닌 경우)
+                if (/^[a-zA-Z][a-zA-Z0-9]*$/.test(word) && 
+                    !mathFunctions.hasOwnProperty(word) && 
+                    !mathConstants.hasOwnProperty(word) &&
+                    !mathPredefined.hasOwnProperty(word) &&
+                    !/^r\d+$/.test(word)) {
+                    return word;
+                }
+            }
+            
+            return null;
+        }
+
+        // 모든 variable input의 강조 상태 업데이트
+        function updateVariableInputHighlight() {
+            const variableInputs = document.querySelectorAll('.variable-input');
+            variableInputs.forEach(input => {
+                const variableName = input.dataset.variable;
+                if (cursorVariable === variableName) {
+                    input.classList.add('variable-input-focused');
+                } else {
+                    input.classList.remove('variable-input-focused');
+                }
+            });
+        }
 
         function highlightFormula(text) {
             // 임시 토큰으로 함수 하이라이트 부분을 보호
@@ -330,6 +387,39 @@
                 formula.formulaTemplate = e.target.value;
                 formulaDisplay.innerHTML = highlightFormula(e.target.value);
                 updateVariableInputs();
+            });
+            
+            // 포커스 해제 시 커서 변수 초기화
+            formulaInput.addEventListener('blur', () => {
+                cursorVariable = null;
+                updateVariableInputHighlight();
+            });
+
+            // 커서 위치 변경 감지
+            formulaInput.addEventListener('selectionchange', () => {
+                const newCursorVariable = getVariableAtCursor(formulaInput);
+                if (cursorVariable !== newCursorVariable) {
+                    cursorVariable = newCursorVariable;
+                    updateVariableInputHighlight();
+                }
+            });
+
+            // 키 입력 시 커서 위치 확인
+            formulaInput.addEventListener('keyup', () => {
+                const newCursorVariable = getVariableAtCursor(formulaInput);
+                if (cursorVariable !== newCursorVariable) {
+                    cursorVariable = newCursorVariable;
+                    updateVariableInputHighlight();
+                }
+            });
+
+            // 마우스 클릭 시 커서 위치 확인
+            formulaInput.addEventListener('click', () => {
+                const newCursorVariable = getVariableAtCursor(formulaInput);
+                if (cursorVariable !== newCursorVariable) {
+                    cursorVariable = newCursorVariable;
+                    updateVariableInputHighlight();
+                }
             });
 
             // 초기 하이라이트 적용

@@ -98,6 +98,16 @@
 
         .highlight-variable {
             color: #cc6600;
+            transition: all 0.3s ease;
+        }
+
+        .highlight-variable-focused {
+            color: #cc6600;
+            background-color: #fff3cd;
+            border-radius: 4px;
+            padding: 2px 2px;
+            box-shadow: 0 0 4px rgba(204, 102, 0, 0.3);
+            transition: all 0.3s ease;
         }
 
         .formula-button-container {
@@ -192,6 +202,7 @@
         // State 관리
         const formulas = [];
         const variables = {};
+        let focusedVariable = null;
 
         function highlightFormula(text) {
             // 임시 토큰으로 함수 하이라이트 부분을 보호
@@ -243,7 +254,8 @@
             
             processedText = processedText.replace(variableRegex, (match) => {
                 if (!mathPredefined.hasOwnProperty(match)) {
-                    return `<span class="highlight-variable">${match}</span>`;
+                    const highlightClass = focusedVariable === match ? 'highlight-variable-focused' : 'highlight-variable';
+                    return `<span class="${highlightClass}">${match}</span>`;
                 }
                 return match;
             });
@@ -351,6 +363,22 @@
             });
             
             return formula;
+        }
+
+        // 모든 수식의 하이라이트 업데이트
+        function updateAllFormulaHighlights() {
+            formulas.forEach(formula => {
+                // 모든 변수 스팬 요소 찾아서 클래스 업데이트
+                const variableSpans = formula.formulaDisplay.querySelectorAll('.highlight-variable, .highlight-variable-focused');
+                variableSpans.forEach(span => {
+                    const variableName = span.textContent;
+                    if (focusedVariable === variableName) {
+                        span.className = 'highlight-variable-focused';
+                    } else {
+                        span.className = 'highlight-variable';
+                    }
+                });
+            });
         }
 
         // 변수 입력 필드 업데이트
@@ -471,6 +499,22 @@
                 updateDisplay();
             }
         });
+
+        // 변수 입력 필드 포커스 이벤트
+        variablesContainer.addEventListener('focus', (e) => {
+            if (e.target.classList.contains('variable-input')) {
+                focusedVariable = e.target.dataset.variable;
+                updateAllFormulaHighlights();
+            }
+        }, true);
+
+        // 변수 입력 필드 블러 이벤트
+        variablesContainer.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('variable-input')) {
+                focusedVariable = null;
+                updateAllFormulaHighlights();
+            }
+        }, true);
 
         // 초기화
         loadStateFromURL();

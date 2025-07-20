@@ -84,6 +84,11 @@
             outline: none;
         }
 
+        .formula-block:has(input.formula-input-focused)::after {
+            color: #8600df;
+            transition: all 0.3s ease;
+        }
+
         .highlight-function {
             color: #0066cc;
         }
@@ -229,7 +234,6 @@
         let focusedVariable = null;
         let cursorVariable = null;
         let focusedResult = null;
-        let cursorResult = null;
 
         // 커서 위치에서 변수 감지
         function getVariableAtCursor(input) {
@@ -256,8 +260,7 @@
                 if (/^[a-zA-Z][a-zA-Z0-9]*$/.test(word) && 
                     !mathFunctions.hasOwnProperty(word) && 
                     !mathConstants.hasOwnProperty(word) &&
-                    !mathPredefined.hasOwnProperty(word) &&
-                    !/^r\d+$/.test(word)) {
+                    !mathPredefined.hasOwnProperty(word)) {
                     return word;
                 }
             }
@@ -280,6 +283,16 @@
                     // find neighboring span
                     const span = input.parentElement.querySelector('.variable-name');
                     span.classList.remove('variable-name-focused');
+                }
+            });
+
+            const formulaInputs = document.querySelectorAll('.formula-input');
+            formulaInputs.forEach(input => {
+                const variableName = input.dataset.variable;
+                if (cursorVariable === variableName) {
+                    input.classList.add('formula-input-focused');
+                } else {
+                    input.classList.remove('formula-input-focused');
                 }
             });
         }

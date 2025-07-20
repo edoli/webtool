@@ -96,6 +96,15 @@
             color: #8600df;
         }
 
+        .highlight-result-focused {
+            color: #8600df;
+            background-color: #fff3cd;
+            border-radius: 4px;
+            padding: 2px 2px;
+            box-shadow: 0 0 4px rgba(204, 102, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
         .highlight-variable {
             color: #cc6600;
             transition: all 0.3s ease;
@@ -219,6 +228,8 @@
         const variables = {};
         let focusedVariable = null;
         let cursorVariable = null;
+        let focusedResult = null;
+        let cursorResult = null;
 
         // 커서 위치에서 변수 감지
         function getVariableAtCursor(input) {
@@ -434,6 +445,16 @@
                 }
             });
 
+            formulaInput.addEventListener('focus', (e) => {
+                focusedResult = e.target.dataset.variable;
+                updateAllFormulaHighlights();
+            }, true);
+
+            formulaInput.addEventListener('blur', (e) => {
+                focusedResult = null;
+                updateAllFormulaHighlights();
+            }, true);
+
             // 초기 하이라이트 적용
             formulaDisplay.innerHTML = highlightFormula(initialTemplate);
             
@@ -478,6 +499,16 @@
                         span.className = 'highlight-variable-focused';
                     } else {
                         span.className = 'highlight-variable';
+                    }
+                });
+                
+                const resultSpans = formula.formulaDisplay.querySelectorAll('.highlight-result, .highlight-result-focused');
+                resultSpans.forEach(span => {
+                    const resultName = span.textContent;
+                    if (focusedResult === resultName) {
+                        span.className = 'highlight-result-focused';
+                    } else {
+                        span.className = 'highlight-result';
                     }
                 });
             });
@@ -561,7 +592,11 @@
             formulas.forEach((formula, index) => {
                 const result = calculateResult(formula.formulaTemplate, variables, tmpContext);
 
+                formula.formulaInput.name = `r${index + 1}`;
+                formula.formulaInput.dataset.variable = `r${index + 1}`;
+
                 if (typeof result === 'number') {
+                    // result 변수에 저장
                     tmpContext[`r${index + 1}`] = result;
                     formula.resultDisplay.textContent = typeof result === 'number' ? result.toFixed(4) : "";
                 } else if (result === undefined || (result === 'string' && !result.startsWith('Error'))) {

@@ -146,6 +146,12 @@
 
         .variable-name {
             padding-right: 1em;
+            font-weight: bold;
+        }
+
+        .variable-name-focused {
+            color: #cc6600;
+            transition: all 0.3s ease;
         }
 
         .variable-input {
@@ -255,8 +261,14 @@
                 const variableName = input.dataset.variable;
                 if (cursorVariable === variableName) {
                     input.classList.add('variable-input-focused');
+                    // find neighboring span
+                    const span = input.parentElement.querySelector('.variable-name');
+                    span.classList.add('variable-name-focused');
                 } else {
                     input.classList.remove('variable-input-focused');
+                    // find neighboring span
+                    const span = input.parentElement.querySelector('.variable-name');
+                    span.classList.remove('variable-name-focused');
                 }
             });
         }

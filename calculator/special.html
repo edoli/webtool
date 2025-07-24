@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/x-icon" href="../icon.ico">
+    <title>Tool Calculator</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-medium);
+            align-items: center;
+        }
+        #variable-inputs {
+            display: flex;
+            width: 100%;
+            max-width: 480px;
+            flex-direction: column;
+            gap: var(--spacing-thin);
+        }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--background-color);
+            padding: 8px 12px;
+            background-color: #f1f5f9;
+            border-radius: 0.3rem;
+        }
+        .input-group label {
+            flex: 1;
+        }
+        select {
+            padding: 4px;
+            font-size: 1em;
+        }
+        .result {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <div class="card-content">
+            <div>
+                <label for="formula-select">수식 선택:</label>
+                <select id="formula-select"></select>
+            </div>
+            <div id="variable-inputs"></div>
+            <div class="result">결과: <span id="result-display">-</span></div>
+        </div>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="./formula.js"></script>
+    <script>
+        const formulas = {
+            'data_between': {
+                'name': '기간 계산기',
+                'formula': 'boolIncludeStartDate * 1000 * 60 * 60 * 24 - (date1 - date2)',
+                'variables': {
+                    'boolIncludeStartDate': '초일 산입',
+                    'date1': '시작일',
+                    'date2': '마지막일',
+                },
+                'output': 'date'
+            },
+            'area_of_circle': {
+                'name': '원의 넓이',
+                'formula': 'PI * radius * radius'
+            }
+        };
+
+        const formulaSelect = document.getElementById('formula-select');
+        const variableInputsDiv = document.getElementById('variable-inputs');
+        const resultDisplay = document.getElementById('result-display');
+
+        Object.entries(formulas).forEach(([key, value]) => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = value.name;
+            formulaSelect.appendChild(option);
+        });
+
+        let variables = {};
+
+        function updateVariableInputs(formulaKey) {
+            variableInputsDiv.innerHTML = '';
+            const formulaObj = formulas[formulaKey];
+            const extractedVariables = extractVariables(formulaObj.formula);
+            const variableInfo = formulaObj.variables || {};
+            variables = {};
+            extractedVariables.forEach(variable => {
+                if (variable in variableInfo) {
+                    variableText = formulaObj.variables[variable];
+                } else {
+                    variableText = variable;
+                }
+                const inputGroup = document.createElement('div');
+                inputGroup.classList.add('input-group');
+                const label = document.createElement('label');
+                label.textContent = variableText;
+                label.setAttribute('for', variable);
+                const input = document.createElement('input');
+                input.setAttribute('id', variable);
+                input.setAttribute('data-var', variable);
+                if (variable.startsWith('number')) {
+                    input.type = 'number';
+                } else if (variable.startsWith('date')) {
+                    input.type = 'date';
+                } else if (variable.startsWith('bool')) {
+                    input.type = 'checkbox';
+                } else {
+                    input.type = 'text';
+                }
+                input.addEventListener('input', calculateResultDisplay);
+                inputGroup.appendChild(label);
+                inputGroup.appendChild(input);
+                variableInputsDiv.appendChild(inputGroup);
+                variables[variable] = input;
+            });
+        }
+
+        function getDurationBetweenDates(milliseconds) {
+            let totalDays = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
+
+            let years = Math.floor(totalDays / 365);
+            totalDays %= 365;
+            
+            let months = Math.floor(totalDays / 30);
+            let days = totalDays % 30;
+
+            return {
+                years: years,
+                months: months,
+                days: days,
+                totalDays: totalDays,
+            };
+        }
+
+        function calculateResultDisplay() {
+            const formulaKey = formulaSelect.value;
+            const formulaObj = formulas[formulaKey];
+            const formula = formulaObj.formula;
+
+            let context = {};
+            for (let key in variables) {
+                if (variables[key].type === 'date') {
+                    context[key] = new Date(variables[key].value).getTime();
+                } else if (variables[key].type === 'checkbox') {
+                    context[key] = Number(variables[key].checked);
+                } else {
+                    context[key] = parseFloat(variables[key].value) || 0;
+                }
+            }
+
+            let result = calculateResult(formula, context);
+
+            if (isNaN(result)) {
+                resultDisplay.textContent = 'Error';
+                return;
+            } else {
+                if (formulaObj.output === 'date') {
+                    const duration = getDurationBetweenDates(result);
+                    result = `${duration.years}년 ${duration.months}개월 ${duration.days}일, 총 ${duration.totalDays}일`;
+                }
+
+                resultDisplay.textContent = result;
+            }
+        }
+
+        formulaSelect.addEventListener('change', () => {
+            updateVariableInputs(formulaSelect.value);
+        });
+
+        updateVariableInputs(formulaSelect.value);
+    </script>
+</body>
+</html>

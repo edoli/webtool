@@ -92,8 +92,9 @@
         <checkbox id="autoDownload">Automatically download processed files</checkbox>
 
         <div id="dropArea" class="drop-area">
-            <p>Drag and drop motion photos here or click to select files</p>
+            <p>Drag and drop motion photos here, paste images from clipboard, or click to select files</p>
             <input type="file" id="fileElem" accept="image/*" multiple>
+            <div style="font-size:12px;color:#666;margin-top:6px;">Tip: Try Ctrl+V to paste an image from your clipboard</div>
         </div>
         <div class="message-box" style="margin-bottom: 0;">파이썬 코드로 이미지 처리를 할 수 있습니다. (입력 이미지: image 변수 사용)</div>
         <textarea id="code">image</textarea>
@@ -115,6 +116,82 @@
         dropArea.addEventListener('click', () => fileElem.click());
         dropArea.addEventListener('drop', handleDrop, false);
         fileElem.addEventListener('change', handleFiles);
+
+        // Handle paste events to allow pasting images from the clipboard
+        window.addEventListener('paste', async (e) => {
+            // ClipboardData may contain files (image/png, image/jpeg, etc.) or HTML with embedded data URLs
+            const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+            let added = false;
+
+            for (const item of items) {
+                try {
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        if (blob && blob.type.startsWith('image/')) {
+                            // Convert blob to a File so it behaves like selected files
+                            const file = new File([blob], (blob.name || `clipboard-image-${Date.now()}.png`), { type: blob.type });
+                            filesToProcess.push(file);
+                            added = true;
+                        }
+                    } else if (item.kind === 'string' && item.type === 'text/html') {
+                        // Try to extract data URL from HTML
+                        item.getAsString((htmlString) => {
+                            const m = htmlString.match(/src\s*=\s*"(data:image\/[^"]+)"/i);
+                            if (m && m[1]) {
+                                const dataUrl = m[1];
+                                try {
+                                    const arr = dataUrl.split(',');
+                                    const mime = arr[0].match(/:(.*?);/)[1];
+                                    const bstr = atob(arr[1]);
+                                    let n = bstr.length;
+                                    const u8arr = new Uint8Array(n);
+                                    while (n--) {
+                                        u8arr[n] = bstr.charCodeAt(n);
+                                    }
+                                    const blob = new Blob([u8arr], { type: mime });
+                                    const file = new File([blob], `clipboard-image-${Date.now()}.png`, { type: mime });
+                                    filesToProcess.push(file);
+                                    added = true;
+                                    updateFilesList();
+                                } catch (err) {
+                                    console.warn('Failed to convert data URL from clipboard HTML', err);
+                                }
+                            }
+                        });
+                    } else if (item.kind === 'string' && item.type === 'text/plain') {
+                        // Sometimes browsers put a plain data URL in text/plain
+                        item.getAsString((str) => {
+                            if (str && str.startsWith('data:image/')) {
+                                try {
+                                    const arr = str.split(',');
+                                    const mime = arr[0].match(/:(.*?);/)[1];
+                                    const bstr = atob(arr[1]);
+                                    let n = bstr.length;
+                                    const u8arr = new Uint8Array(n);
+                                    while (n--) {
+                                        u8arr[n] = bstr.charCodeAt(n);
+                                    }
+                                    const blob = new Blob([u8arr], { type: mime });
+                                    const file = new File([blob], `clipboard-image-${Date.now()}.png`, { type: mime });
+                                    filesToProcess.push(file);
+                                    added = true;
+                                    updateFilesList();
+                                } catch (err) {
+                                    console.warn('Failed to convert data URL from plain text', err);
+                                }
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.warn('Error handling clipboard item', err);
+                }
+            }
+
+            if (added) {
+                updateFilesList();
+                status.textContent = 'Image pasted from clipboard';
+            }
+        });
 
         function handleDrop(e) {
             let dt = e.dataTransfer;

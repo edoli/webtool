@@ -393,10 +393,10 @@ if is_array:
         np.clip(direct_result, 0, 255, out=direct_result)
         direct_result = direct_result.astype(np.uint8)
     if direct_result.ndim == 3:
-        if image.shape[2] == 3:
+        if direct_result.shape[2] == 3:
             # Convert RGB to BGR
             direct_result = cv2.cvtColor(direct_result, cv2.COLOR_RGB2BGR)
-        elif image.shape[2] == 4:
+        elif direct_result.shape[2] == 4:
             # Convert RGBA to BGRA
             direct_result = cv2.cvtColor(direct_result, cv2.COLOR_RGBA2BGRA)
     try:

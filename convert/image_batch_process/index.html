@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/x-icon" href="../../icon.ico">
+    <title>Image Batch Process</title>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+
+    <!-- CodeMirror 기본 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
+
+    <!-- CodeMirror VS Code 스타일 테마 (One Dark) -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/material-palenight.min.css">
+
+    <link rel="stylesheet" href="../../style.css">
+
+    <style>    
+        .files-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background-color: #f5f5f5;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        .remove-btn {
+            background-color: transparent;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .remove-btn:hover {
+            background-color: #ff4d4d;
+            color: white;
+            border-color: #ff4d4d;
+            transform: scale(1.05);
+        }
+
+        .run-button-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .output-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .console-output {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Image Batch Process</div>
+
+        <checkbox id="autoDownload">Automatically download processed files</checkbox>
+
+        <div id="dropArea" class="drop-area">
+            <p>Drag and drop motion photos here, paste images from clipboard, or click to select files</p>
+            <input type="file" id="fileElem" accept="image/*" multiple>
+            <div style="font-size:12px;color:#666;margin-top:6px;">Tip: Try Ctrl+V to paste an image from your clipboard</div>
+        </div>
+        <div class="message-box" style="margin-bottom: 0;">파이썬 코드로 이미지 처리를 할 수 있습니다. (입력 이미지: image 변수 사용)</div>
+        <textarea id="code">image</textarea>
+        <div id="status" class="message-box"></div>
+        <div id="files"></div>
+        <div id="previewArea"></div>
+    </div>
+
+    <script src="../../script.js"></script>
+    <script>
+        let filesToProcess = [];
+
+        let dropArea = document.getElementById('dropArea');
+        let fileElem = document.getElementById('fileElem');
+        let status = document.getElementById('status');
+        let previewArea = document.getElementById('previewArea');
+        let autoDownload = document.getElementById('autoDownload');
+
+        dropArea.addEventListener('click', () => fileElem.click());
+        dropArea.addEventListener('drop', handleDrop, false);
+        fileElem.addEventListener('change', handleFiles);
+
+        // Handle paste events to allow pasting images from the clipboard
+        window.addEventListener('paste', async (e) => {
+            // ClipboardData may contain files (image/png, image/jpeg, etc.) or HTML with embedded data URLs
+            const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+            let added = false;
+
+            for (const item of items) {
+                try {
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        if (blob && blob.type.startsWith('image/')) {
+                            // Convert blob to a File so it behaves like selected files
+                            const file = new File([blob], (blob.name || `clipboard-image-${Date.now()}.png`), { type: blob.type });
+                            filesToProcess.push(file);
+                            added = true;
+                        }
+                    } else if (item.kind === 'string' && item.type === 'text/html') {
+                        // Try to extract data URL from HTML
+                        item.getAsString((htmlString) => {
+                            const m = htmlString.match(/src\s*=\s*"(data:image\/[^"]+)"/i);
+                            if (m && m[1]) {
+                                const dataUrl = m[1];
+                                try {
+                                    const arr = dataUrl.split(',');
+                                    const mime = arr[0].match(/:(.*?);/)[1];
+                                    const bstr = atob(arr[1]);
+                                    let n = bstr.length;
+                                    const u8arr = new Uint8Array(n);
+                                    while (n--) {
+                                        u8arr[n] = bstr.charCodeAt(n);
+                                    }
+                                    const blob = new Blob([u8arr], { type: mime });
+                                    const file = new File([blob], `clipboard-image-${Date.now()}.png`, { type: mime });
+                                    filesToProcess.push(file);
+                                    added = true;
+                                    updateFilesList();
+                                } catch (err) {
+                                    console.warn('Failed to convert data URL from clipboard HTML', err);
+                                }
+                            }
+                        });
+                    } else if (item.kind === 'string' && item.type === 'text/plain') {
+                        // Sometimes browsers put a plain data URL in text/plain
+                        item.getAsString((str) => {
+                            if (str && str.startsWith('data:image/')) {
+                                try {
+                                    const arr = str.split(',');
+                                    const mime = arr[0].match(/:(.*?);/)[1];
+                                    const bstr = atob(arr[1]);
+                                    let n = bstr.length;
+                                    const u8arr = new Uint8Array(n);
+                                    while (n--) {
+                                        u8arr[n] = bstr.charCodeAt(n);
+                                    }
+                                    const blob = new Blob([u8arr], { type: mime });
+                                    const file = new File([blob], `clipboard-image-${Date.now()}.png`, { type: mime });
+                                    filesToProcess.push(file);
+                                    added = true;
+                                    updateFilesList();
+                                } catch (err) {
+                                    console.warn('Failed to convert data URL from plain text', err);
+                                }
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.warn('Error handling clipboard item', err);
+                }
+            }
+
+            if (added) {
+                updateFilesList();
+                status.textContent = 'Image pasted from clipboard';
+            }
+        });
+
+        function handleDrop(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            handleFiles({ target: { files: files } });
+        }// ...existing code...
+        function handleFiles(e) {
+            let files = e.target.files;
+            filesToProcess = [...filesToProcess, ...Array.from(files)];
+            updateFilesList();
+        }
+
+        function updateFilesList() {
+            const filesDiv = document.getElementById('files');
+            filesDiv.innerHTML = '';
+            
+            if (filesToProcess.length === 0) {
+                filesDiv.innerHTML = '<p>No files selected</p>';
+                return;
+            }
+            
+            const filesList = document.createElement('ul');
+            filesList.className = 'files-list';
+            
+            filesToProcess.forEach((file, index) => {
+                const fileItem = document.createElement('li');
+                fileItem.className = 'file-item';
+                
+                const fileName = document.createElement('span');
+                fileName.textContent = file.name;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.className = 'remove-btn';
+                removeBtn.onclick = () => {
+                    filesToProcess.splice(index, 1);
+                    updateFilesList();
+                };
+                
+                fileItem.appendChild(fileName);
+                fileItem.appendChild(removeBtn);
+                filesList.appendChild(fileItem);
+            });
+            
+            filesDiv.appendChild(filesList);
+            
+            // Add run button if files exist
+            const runButtonContainer = document.createElement('div');
+            runButtonContainer.className = 'run-button-container';
+            
+            const runButton = document.createElement('button');
+            runButton.textContent = 'Run Script (Ctrl+Enter)';
+            runButton.className = 'button button-large';
+            runButton.onclick = runPythonCode;
+            
+            runButtonContainer.appendChild(runButton);
+            filesDiv.appendChild(runButtonContainer);
+        }
+
+        let pyodide;
+
+        async function initializePyodide() {
+            status.textContent = "Loading Python environment...";
+            try {
+                pyodide = await loadPyodide();
+                await pyodide.loadPackagesFromImports(`
+import numpy as np
+import cv2
+import io
+import base64
+import micropip
+                `);
+                status.textContent = "Python environment ready";
+            } catch (error) {
+                status.textContent = "Error loading Python: " + error.message;
+            }
+        }
+
+        // Initialize Pyodide when the page loads
+        window.addEventListener('load', initializePyodide);
+
+        async function runPythonCode() {
+            if (!pyodide) {
+                status.textContent = "Python environment not ready yet. Please wait...";
+                return;
+            }
+            
+            if (filesToProcess.length === 0) {
+                status.textContent = "No files to process. Please add files first.";
+                return;
+            }
+            
+            const code = editor.getValue();
+            if (!code.trim()) {
+                status.textContent = "Please enter Python code to run.";
+                return;
+            }
+            
+            previewArea.innerHTML = '';
+            status.textContent = "Processing...";
+            
+            const outputContainer = document.createElement('div');
+            outputContainer.className = 'output-container';
+            outputContainer.innerHTML = '<h3>Console Output:</h3><pre class="console-output"></pre>';
+            previewArea.appendChild(outputContainer);
+            
+            const consoleOutput = outputContainer.querySelector('.console-output');
+            
+            // Redirect Python print statements to our console output
+            pyodide.globals.set("_console_output", "");
+            await pyodide.runPythonAsync(`
+import sys
+class StdoutCatcher:
+    def write(self, text):
+        global _console_output
+        _console_output += text
+    def flush(self):
+        pass
+sys.stdout = StdoutCatcher()
+            `);
+            
+            // Process each file
+            for (let i = 0; i < filesToProcess.length; i++) {
+                const file = filesToProcess[i];
+                status.textContent = `Processing ${i+1}/${filesToProcess.length}: ${file.name}`;
+                
+                try {
+                    // Read file as array buffer
+                    const arrayBuffer = await file.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    
+                    // Convert to Python bytes
+                    pyodide.globals.set("file_bytes", uint8Array);
+                    
+                    // Run initialization code to convert bytes to numpy array
+                    await pyodide.runPythonAsync(`
+file_bytes = bytes(file_bytes)
+
+import numpy as np
+import cv2
+import io
+import base64
+
+is_heif = False
+if file_bytes[4:8] == b'ftyp':
+    brand = file_bytes[8:12].decode(errors="ignore")
+    if brand in ("heic", "heif", "mif1", "msf1", "avif", "avis"):
+        is_heif = True
+
+
+# Open image from bytes
+if is_heif:
+    # Decode HEIC/HEIF image
+    import micropip
+    await micropip.install("pyheif")
+    import pyheif
+    heif_file = pyheif.read(file_bytes)
+    stride = heif_file.stride
+    image = np.frombuffer(heif_file.data, dtype=np.uint8).reshape((heif_file.size[1], stride))
+    image = image[:, :heif_file.size[0] * 3].reshape((heif_file.size[1], heif_file.size[0], -1))
+else:
+    nparr = np.frombuffer(file_bytes, np.uint8)
+    image = cv2.imdecode(nparr, -1)
+    if image.ndim == 3:
+        if image.shape[2] == 3:
+            # Convert BGR to RGB
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        elif image.shape[2] == 4:
+            # Convert BGRA to RGBA
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
+                    `);
+                    
+                    // Run user code
+                    const codeResult = await pyodide.runPythonAsync(code);
+                    
+                    // Capture any printed output
+                    const output = pyodide.globals.get("_console_output");
+                    consoleOutput.textContent += output;
+                    pyodide.globals.set("_console_output", "");
+                    
+                    // Process the returned result directly
+                    if (codeResult !== undefined) {
+                        // Add result to Python globals so we can work with it
+                        pyodide.globals.set("direct_result", codeResult);
+                        
+                        // Convert result to image and display
+                        await pyodide.runPythonAsync(`
+import numpy as np
+import cv2
+import io
+import base64
+
+# Check if direct_result is a numpy array
+is_array = isinstance(direct_result, np.ndarray)
+result_b64 = None
+
+if is_array:
+    if direct_result.dtype != np.uint8:
+        np.clip(direct_result, 0, 255, out=direct_result)
+        direct_result = direct_result.astype(np.uint8)
+    if direct_result.ndim == 3:
+        if direct_result.shape[2] == 3:
+            # Convert RGB to BGR
+            direct_result = cv2.cvtColor(direct_result, cv2.COLOR_RGB2BGR)
+        elif direct_result.shape[2] == 4:
+            # Convert RGBA to BGRA
+            direct_result = cv2.cvtColor(direct_result, cv2.COLOR_RGBA2BGRA)
+    try:
+        # PNG로 변환
+        _, buffer = cv2.imencode('.png', direct_result)
+        img_base64_str = base64.b64encode(buffer).decode('utf-8')
+        result_b64 = f"data:image/png;base64,{img_base64_str}"
+        print(f"Converted result to image, shape: {direct_result.shape}")
+    except Exception as e:
+        print(f"Error converting result to image: {str(e)}")
+else:
+    print(f"Result is not a numpy array: {type(direct_result)}")
+                        `);
+                        
+                        const resultB64 = pyodide.globals.get("result_b64");
+                        const isArray = pyodide.globals.get("is_array");
+                        
+                        if (resultB64) {
+                            // Create preview container
+                            const previewContainer = document.createElement('div');
+                            previewContainer.className = 'file-item';
+
+                            previewContainer.innerHTML = `
+                                <div class="flex-1">
+                                    <div class="file-name">File ${i + 1}: ${file.name}</div>
+                                    <a href="${resultB64}" download="processed_${file.name.split('.')[0]}.png" class="button">Download</a>
+                                </div>
+                                <div class="flex-1">
+                                    <img src="${resultB64}" class="fill-parent-width" alt="Preview Image">
+                                </div>
+                            `;
+                            
+                            previewArea.appendChild(previewContainer);
+                            
+                            // Auto download if checkbox is checked
+                            if (autoDownload.checked) {
+                                previewContainer.querySelector('a').click();
+                            }
+                        } else if (isArray) {
+                            consoleOutput.textContent += `\nCouldn't render numpy array as image. Check the shape and dtype.\n`;
+                        } else {
+                            // Display non-image result as text
+                            consoleOutput.textContent += `\nResult: ${codeResult}\n`;
+                        }
+                    }
+                } catch (error) {
+                    const output = pyodide.globals.get("_console_output");
+                    consoleOutput.textContent += output;
+                    consoleOutput.textContent += `\nError processing ${file.name}: ${error.message}\n`;
+                }
+            }
+            
+            status.textContent = "Processing complete";
+        }
+
+        // Handle drag over event
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('active');
+        });
+
+        // Handle drag leave event
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('active');
+        });
+
+        // Prevent default behavior for drop event
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('active');
+        });        
+
+        // CodeMirror 설정 (VS Code 테마 적용)
+        let editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            mode: "python",
+            lineNumbers: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            theme: "material-palenight",  // VS Code 스타일 테마 적용
+        });
+
+        // Ctrl + Enter 키 이벤트 추가
+        editor.setOption("extraKeys", {
+            "Ctrl-Enter": function () {
+                runPythonCode();
+            }
+        });
+    </script>
+</body>
+</html>

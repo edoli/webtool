@@ -99,6 +99,14 @@
             background-color: #e68900;
         }
 
+        #fullscreenButton {
+            background-color: #607d8b;
+        }
+
+        #fullscreenButton:hover {
+            background-color: #546e7a;
+        }
+
         button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
@@ -127,6 +135,47 @@
             vertical-align: middle;
             margin-right: 5px;
         }
+
+        /* 전체화면 모드 스타일 */
+        body.fullscreen-mode {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body.fullscreen-mode .container {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        body.fullscreen-mode #camera-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        body.fullscreen-mode #video,
+        body.fullscreen-mode #canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        body.fullscreen-mode .title,
+        body.fullscreen-mode .button-container,
+        body.fullscreen-mode #error-message,
+        body.fullscreen-mode #captured-photo,
+        body.fullscreen-mode #camera-message {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -154,6 +203,7 @@
             <button id="captureButton">사진 촬영</button>
             <button id="switchButton">카메라 전환</button>
             <button id="downloadButton">사진 저장</button>
+            <button id="fullscreenButton">전체화면</button>
     
         </div>
         
@@ -170,12 +220,15 @@
         const switchButton = document.getElementById('switchButton');
         const captureButton = document.getElementById('captureButton');
         const downloadButton = document.getElementById('downloadButton');
+        const fullscreenButton = document.getElementById('fullscreenButton');
         const errorMessage = document.getElementById('error-message');
         const cameraMessage = document.getElementById('camera-message');
 
         let stream = null;
         let facingMode = 'user'; // 'user' for front camera, 'environment' for back camera
         let cameras = []; // 사용 가능한 카메라 목록
+
+        let isFullscreen = false;
 
         let currentFilter = 'none';
         const filterSelect = document.getElementById('filterSelect');
@@ -380,6 +433,28 @@
             hideError();
         }
 
+        // 전체화면 모드 진입
+        function enterFullscreenMode() {
+            document.body.classList.add('fullscreen-mode');
+            fullscreenButton.textContent = '전체화면 종료';
+            isFullscreen = true;
+        }
+
+        // 전체화면 모드 종료
+        function exitFullscreenMode() {
+            document.body.classList.remove('fullscreen-mode');
+            fullscreenButton.textContent = '전체화면';
+            isFullscreen = false;
+        }
+
+        function toggleFullscreenMode() {
+            if (isFullscreen) {
+                exitFullscreenMode();
+            } else {
+                enterFullscreenMode();
+            }
+        }
+
         // 사진 촬영
         function capturePhoto() {
             capturedPhoto.src = canvas.toDataURL('image/jpeg');
@@ -399,6 +474,9 @@
         startButton.addEventListener('click', () => {
             if (stream) {
                 stopCamera();
+                if (isFullscreen) {
+                    exitFullscreenMode();
+                }
             } else {
                 startCamera();
             }
@@ -407,6 +485,7 @@
         switchButton.addEventListener('click', switchCamera);
         captureButton.addEventListener('click', capturePhoto);
         downloadButton.addEventListener('click', downloadPhoto);
+        fullscreenButton.addEventListener('click', toggleFullscreenMode);
 
         // 페이지 로드시 카메라 메시지 표시
         cameraMessage.style.display = 'block';

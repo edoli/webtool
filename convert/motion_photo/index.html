@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/x-icon" href="../../icon.ico">
+    <title>Motion Photo Extractor</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="title">Motion Photo Extractor</div>
+
+        <checkbox id="autoDownload">Automatically download converted files</checkbox>
+
+        <div id="dropArea" class="drop-area">
+            <p>Drag and drop motion photos here or click to select files</p>
+            <input type="file" id="fileElem" accept="image/*" multiple>
+        </div>
+        <div id="status" class="message-box"></div>
+        <div id="previewArea"></div>
+    </div>
+
+    <script src="../../script.js"></script>
+    <script>
+        let dropArea = document.getElementById('dropArea');
+        let fileElem = document.getElementById('fileElem');
+        let status = document.getElementById('status');
+        let previewArea = document.getElementById('previewArea');
+        let autoDownload = document.getElementById('autoDownload');
+
+        dropArea.addEventListener('drop', handleDrop, false);
+        dropArea.addEventListener('click', () => fileElem.click());
+        fileElem.addEventListener('change', handleFiles);
+
+        function handleDrop(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            handleFiles({ target: { files: files } });
+        }
+
+        function handleFiles(e) {
+            let files = e.target.files;
+            status.textContent = `Processing ${files.length} file(s)...`;
+            previewArea.innerHTML = '';
+            
+            const tasks = Array.from(files).map((file, index) => extractMotionPhoto(file, index));
+
+            Promise.all(tasks).then(() => {
+                status.textContent = `Done processing`;
+            });
+        }
+
+        function extractMotionPhoto(file, index) {
+            return readFileAsArrayBuffer(file).then(arrayBuffer => {
+                let blob = buffertoblob(arrayBuffer);
+                if (blob) {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+
+                    const videoURL = URL.createObjectURL(blob);
+                    const downloadFileName = file.name.replace(/\.[^/.]+$/, "") + '.mp4';
+                    fileItem.innerHTML = `
+                        <div class="flex-1">
+                            <div class="file-name">File ${index + 1}: ${file.name}</div>
+                            <a href="${videoURL}" download="${downloadFileName}" class="button">Download MP4</a>
+                        </div>
+                        <div class="flex-1">
+                            <video src="${videoURL}" controls class="fill-parent-width"></video>
+                        </div>
+                    `;
+
+                    previewArea.appendChild(fileItem);
+
+                    if (autoDownload.checked) {
+                        fileItem.querySelector('a').click();
+                    }
+                } else {
+                    let fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `File ${index + 1}: ${file.name} - No motion photo data found`;
+                    previewArea.appendChild(fileItem);
+                }
+
+                if (index === fileElem.files.length - 1) {
+                    status.textContent = 'All files processed.';
+                }
+            }).catch(error => {
+                console.error('FileReader error:', error);
+                let fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = `File ${index + 1}: ${file.name} - Error processing the file`;
+                previewArea.appendChild(fileItem);
+
+                if (index === fileElem.files.length - 1) {
+                    status.textContent = 'All files processed.';
+                }
+            });
+        }
+
+        function buffertoblob(arrayBuffer) {
+            var array = new Uint8Array(arrayBuffer), start;
+            // skip first 8 bytes to avoid duplicated magic number
+            for (var i = 8; i < array.length; i++) {
+                if (array[i+4] == 0x66 && array[i+5] == 0x74 && array[i+6] == 0x79 && array[i+7] == 0x70) {
+                    start = i;
+                    break;
+                }
+            }
+            if (start == undefined) return false;
+            return new Blob([array.subarray(start, array.length)], {type: "video/mp4"});
+        }
+    </script>
+</body>
+</html>

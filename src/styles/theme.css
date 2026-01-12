@@ -1,5 +1,5 @@
 :root {
-  --font-sans: "Space Grotesk", "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-ink: #1d1b19;
@@ -9,7 +9,8 @@
   --color-surface-soft: #f6f2ee;
   --color-primary: #ff5a3c;
   --color-primary-strong: #e4462a;
-  --color-secondary: #1f9aa6;
+  --color-secondary: #3498db;
+  --color-tertiary: #ff9f1c;
   --color-accent: #f7c945;
   --color-shadow: rgba(27, 23, 18, 0.12);
 
@@ -30,9 +31,6 @@
 }
 
 body {
-  background: radial-gradient(circle at top left, #fff4ec 0%, transparent 45%),
-    radial-gradient(circle at 20% 20%, #fdf1d4 0%, transparent 35%),
-    radial-gradient(circle at 80% 0%, #e7f8f9 0%, transparent 40%),
-    #f9f6f2;
+  background: #fff9f3;
   color: var(--color-ink);
 }

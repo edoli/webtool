@@ -34,11 +34,6 @@ export function Home() {
                   <Card className="tool-card__tile">
                     <div className="tool-card__head">
                       <h3>{tool.title}</h3>
-                      {tool.status === 'planned' ? (
-                        <Badge tone="muted">Planned</Badge>
-                      ) : (
-                        <Badge tone="accent">Ready</Badge>
-                      )}
                     </div>
                     <p className="muted">{tool.description}</p>
                   </Card>

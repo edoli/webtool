@@ -177,13 +177,15 @@ fig_count
   }, [runPython]);
 
   return (
-    <ToolLayout title="Python Editor" description="Run Python directly in the browser." badge="Apps" extend={true}>
-      <div className="code-layout">
-        <div className="code-panel">
-          <textarea
-            ref={textareaRef}
-            defaultValue={`import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\nprint(f'x: {x}')\nprint(f'y: {y}')\n\nplt.figure()\nplt.plot(x, y)\nplt.title("Sine Wave")\nplt.xlabel("X")\nplt.ylabel("Y")\nplt.grid(True)`}
-          />
+    <ToolLayout badge="Apps" extend={true}>
+      <div className="code-layout python-editor">
+        <div className="code-panel code-panel--editor">
+          <div className="code-editor">
+            <textarea
+              ref={textareaRef}
+              defaultValue={`import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\nprint(f'x: {x}')\nprint(f'y: {y}')\n\nplt.figure()\nplt.plot(x, y)\nplt.title("Sine Wave")\nplt.xlabel("X")\nplt.ylabel("Y")\nplt.grid(True)`}
+            />
+          </div>
           <div className="toolbar">
             <Button onClick={runPython}>실행 (Ctrl + Enter)</Button>
             <span className="muted">{status}</span>

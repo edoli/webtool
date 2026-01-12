@@ -40,7 +40,7 @@ export const tools: Tool[] = [
     description: 'Run Python scripts on image batches.',
     path: '/convert/image-batch',
     category: 'convert',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'camera',
@@ -48,7 +48,7 @@ export const tools: Tool[] = [
     description: 'Live camera with GPU filters.',
     path: '/apps/camera',
     category: 'apps',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'calculator',
@@ -56,7 +56,7 @@ export const tools: Tool[] = [
     description: 'Formula-driven calculator with variables.',
     path: '/apps/calculator',
     category: 'apps',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'special-calculator',
@@ -64,7 +64,7 @@ export const tools: Tool[] = [
     description: 'Advanced calculator variant.',
     path: '/apps/special-calculator',
     category: 'apps',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'csv-viewer',
@@ -72,7 +72,15 @@ export const tools: Tool[] = [
     description: 'Inspect CSV tables with column tools.',
     path: '/apps/csv-viewer',
     category: 'apps',
-    status: 'planned',
+    status: 'ready',
+  },
+  {
+    id: 'web-collection',
+    title: 'Web Collection',
+    description: 'Save and open favorite web pages.',
+    path: '/apps/web-collection',
+    category: 'apps',
+    status: 'ready',
   },
   {
     id: 'python-editor',
@@ -80,7 +88,7 @@ export const tools: Tool[] = [
     description: 'Run Python in-browser with Pyodide.',
     path: '/apps/python-editor',
     category: 'apps',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'equation',
@@ -88,7 +96,7 @@ export const tools: Tool[] = [
     description: 'Convert handwritten math to LaTeX.',
     path: '/labs/equation',
     category: 'labs',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'pdf',
@@ -96,7 +104,7 @@ export const tools: Tool[] = [
     description: 'Compress, merge, split PDF files.',
     path: '/labs/pdf',
     category: 'labs',
-    status: 'planned',
+    status: 'ready',
   },
   {
     id: 'mega',
@@ -104,7 +112,7 @@ export const tools: Tool[] = [
     description: 'Parse and inspect mega files.',
     path: '/labs/mega',
     category: 'labs',
-    status: 'planned',
+    status: 'ready',
   },
 ];
 

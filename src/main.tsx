@@ -6,6 +6,7 @@ import './styles/theme.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/utilities.css';
+import './styles/tools.css';
 
 const root = document.getElementById('root');
 

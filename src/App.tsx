@@ -4,7 +4,16 @@ import { Home } from './pages/Home';
 import { MotionPhoto } from './pages/convert/MotionPhoto';
 import { HeicToJpg } from './pages/convert/HeicToJpg';
 import { MovToMp4 } from './pages/convert/MovToMp4';
-import { ComingSoon } from './pages/ComingSoon';
+import { ImageBatch } from './pages/convert/ImageBatch';
+import { Camera } from './pages/apps/Camera';
+import { FormulaCalculator } from './pages/apps/FormulaCalculator';
+import { SpecialCalculator } from './pages/apps/SpecialCalculator';
+import { CsvViewer } from './pages/apps/CsvViewer';
+import { PythonEditor } from './pages/apps/PythonEditor';
+import { WebCollection } from './pages/apps/WebCollection';
+import { Equation } from './pages/labs/Equation';
+import { PdfTool } from './pages/labs/PdfTool';
+import { MegaParser } from './pages/labs/MegaParser';
 import { NotFound } from './pages/NotFound';
 
 export default function App() {
@@ -15,15 +24,16 @@ export default function App() {
         <Route path="/convert/motion-photo" element={<MotionPhoto />} />
         <Route path="/convert/heic-to-jpg" element={<HeicToJpg />} />
         <Route path="/convert/mov-to-mp4" element={<MovToMp4 />} />
-        <Route path="/convert/image-batch" element={<ComingSoon title="Image Batch Process" />} />
-        <Route path="/apps/camera" element={<ComingSoon title="Camera" />} />
-        <Route path="/apps/calculator" element={<ComingSoon title="Formula Calculator" />} />
-        <Route path="/apps/special-calculator" element={<ComingSoon title="Special Calculator" />} />
-        <Route path="/apps/csv-viewer" element={<ComingSoon title="CSV Viewer" />} />
-        <Route path="/apps/python-editor" element={<ComingSoon title="Python Editor" />} />
-        <Route path="/labs/equation" element={<ComingSoon title="Scribble to LaTeX" />} />
-        <Route path="/labs/pdf" element={<ComingSoon title="PDF Tool" />} />
-        <Route path="/labs/mega" element={<ComingSoon title="Mega Parser" />} />
+        <Route path="/convert/image-batch" element={<ImageBatch />} />
+        <Route path="/apps/camera" element={<Camera />} />
+        <Route path="/apps/calculator" element={<FormulaCalculator />} />
+        <Route path="/apps/special-calculator" element={<SpecialCalculator />} />
+        <Route path="/apps/csv-viewer" element={<CsvViewer />} />
+        <Route path="/apps/web-collection" element={<WebCollection />} />
+        <Route path="/apps/python-editor" element={<PythonEditor />} />
+        <Route path="/labs/equation" element={<Equation />} />
+        <Route path="/labs/pdf" element={<PdfTool />} />
+        <Route path="/labs/mega" element={<MegaParser />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppShell>

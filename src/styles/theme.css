@@ -1,0 +1,38 @@
+:root {
+  --font-sans: "Space Grotesk", "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-ink: #1d1b19;
+  --color-muted: #5f5a55;
+  --color-border: #e5dfd8;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f6f2ee;
+  --color-primary: #ff5a3c;
+  --color-primary-strong: #e4462a;
+  --color-secondary: #1f9aa6;
+  --color-accent: #f7c945;
+  --color-shadow: rgba(27, 23, 18, 0.12);
+
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --shadow-1: 0 8px 24px var(--color-shadow);
+  --shadow-2: 0 16px 36px rgba(27, 23, 18, 0.18);
+}
+
+body {
+  background: radial-gradient(circle at top left, #fff4ec 0%, transparent 45%),
+    radial-gradient(circle at 20% 20%, #fdf1d4 0%, transparent 35%),
+    radial-gradient(circle at 80% 0%, #e7f8f9 0%, transparent 40%),
+    #f9f6f2;
+  color: var(--color-ink);
+}

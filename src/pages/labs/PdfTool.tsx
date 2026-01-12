@@ -10,6 +10,35 @@ type FileItem = {
 };
 
 type Operation = 'compress' | 'merge' | 'split';
+type GhostscriptConfig = {
+  pdfSetting?: string;
+  customCommand?: string;
+  advancedSettings?: {
+    compatibilityLevel: string;
+    colorImageSettings: {
+      downsample: boolean;
+      resolution: number;
+    };
+  };
+  showTerminalOutput?: boolean;
+  showProgressBar?: boolean;
+  operation?: Operation;
+  files?: string[];
+  psDataURL?: string;
+  splitRange?: {
+    startPage: string;
+    endPage: string;
+  };
+};
+type GhostscriptResult = {
+  error?: string;
+  pdfDataURL?: string;
+};
+type GhostscriptRunner = (
+  data: GhostscriptConfig,
+  response?: (data: unknown) => void,
+  progress?: (line: string) => void
+) => Promise<GhostscriptResult>;
 
 export function PdfTool() {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -29,17 +58,20 @@ export function PdfTool() {
   const [processing, setProcessing] = useState(false);
   const [status, setStatus] = useState('');
 
-  const gsRef = useRef<((data: any, response?: any, progress?: any) => Promise<any>) | null>(null);
+  const gsRef = useRef<GhostscriptRunner | null>(null);
   const dragIndexRef = useRef<number | null>(null);
 
-  const loadGhostscript = useCallback(async () => {
-    if (gsRef.current) {
-      return gsRef.current;
-    }
-    const mod = await import('../../pdf/worker-init.js');
-    gsRef.current = mod._GSPS2PDF;
-    return gsRef.current;
-  }, []);
+  const loadGhostscript = useCallback(
+    async (): Promise<GhostscriptRunner> => {
+      if (gsRef.current) {
+        return gsRef.current;
+      }
+      const mod = await import('../../pdf/worker-init.js');
+      gsRef.current = mod._GSPS2PDF;
+      return mod._GSPS2PDF;
+    },
+    []
+  );
 
   const addFiles = useCallback((fileList: FileList) => {
     const nextFiles: FileItem[] = [];
@@ -104,7 +136,7 @@ export function PdfTool() {
       },
     };
 
-    const config: Record<string, any> = {
+    const config: GhostscriptConfig = {
       pdfSetting,
       customCommand: customCommand.trim() || undefined,
       advancedSettings,
@@ -112,15 +144,22 @@ export function PdfTool() {
       showProgressBar: showProgress,
     };
 
+    const firstFile = files[0];
+    if (!firstFile) {
+      setStatus('No PDF files available.');
+      setProcessing(false);
+      return;
+    }
+
     if (operation === 'merge') {
       config.operation = 'merge';
       config.files = files.map(item => item.url);
     } else if (operation === 'compress') {
       config.operation = 'compress';
-      config.psDataURL = files[0]?.url;
+      config.psDataURL = firstFile.url;
     } else {
       config.operation = 'split';
-      config.psDataURL = files[0]?.url;
+      config.psDataURL = firstFile.url;
       config.splitRange = { startPage: splitStart, endPage: splitEnd };
     }
 
@@ -134,13 +173,16 @@ export function PdfTool() {
       if (result?.error) {
         throw new Error(result.error);
       }
+      if (!result?.pdfDataURL) {
+        throw new Error('PDF result not available.');
+      }
       if (resultUrl) {
         URL.revokeObjectURL(resultUrl);
       }
       setResultUrl(result.pdfDataURL);
       setStatus('Done');
       if (autoDownload) {
-        const fileNameBase = operation === 'merge' ? 'merged' : files[0].file.name.replace(/\.pdf$/i, '');
+        const fileNameBase = operation === 'merge' ? 'merged' : firstFile.file.name.replace(/\.pdf$/i, '');
         const suffix =
           operation === 'split'
             ? `_${splitStart}-${splitEnd}`
@@ -152,9 +194,10 @@ export function PdfTool() {
         link.download = `${fileNameBase}${suffix}.pdf`;
         link.click();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      setStatus(error.message || 'Error');
+      const message = error instanceof Error ? error.message : 'Error';
+      setStatus(message);
     } finally {
       setProcessing(false);
     }
@@ -199,13 +242,16 @@ export function PdfTool() {
                   setFiles(prev => {
                     const next = [...prev];
                     const [moved] = next.splice(source, 1);
+                    if (!moved) {
+                      return prev;
+                    }
                     next.splice(index, 0, moved);
                     return next;
                   });
                   dragIndexRef.current = null;
                 }}
               >
-                <span className="handle">≡</span>
+                <span className="handle">::</span>
                 <span>{item.file.name}</span>
                 <span className="meta">{bytes(item.file.size)}</span>
                 <Button variant="ghost" onClick={() => removeFile(item.id)}>

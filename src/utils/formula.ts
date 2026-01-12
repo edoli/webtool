@@ -11,8 +11,9 @@ export function createMathContext(useDegree: boolean): MathContext {
   };
   const mathConstants: Record<string, number> = {};
 
+  const mathObject = Math as unknown as Record<string, unknown>;
   Object.getOwnPropertyNames(Math).forEach(name => {
-    const value = (Math as Record<string, unknown>)[name];
+    const value = mathObject[name];
     if (typeof value === 'function') {
       mathFunctions[name] = value as (...args: number[]) => number;
     } else if (typeof value === 'number') {
@@ -132,7 +133,7 @@ export function highlightFormula(
 
   if (focusedResult) {
     processed = processed.replace(
-      new RegExp(`(<span class=\"highlight-result\">${focusedResult}<\\/span>)`, 'g'),
+      new RegExp(`(<span class="highlight-result">${focusedResult}</span>)`, 'g'),
       `<span class="highlight-result-focused">${focusedResult}</span>`
     );
   }
@@ -144,11 +145,11 @@ export function getVariableAtCursor(value: string, cursorPos: number) {
   let start = cursorPos;
   let end = cursorPos;
 
-  while (start > 0 && /[a-zA-Z0-9]/.test(value[start - 1])) {
+  while (start > 0 && /[a-zA-Z0-9]/.test(value.charAt(start - 1))) {
     start -= 1;
   }
 
-  while (end < value.length && /[a-zA-Z0-9]/.test(value[end])) {
+  while (end < value.length && /[a-zA-Z0-9]/.test(value.charAt(end))) {
     end += 1;
   }
 

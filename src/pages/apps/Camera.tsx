@@ -5,13 +5,33 @@ import { loadScriptOnce } from '../../utils/loadScript';
 
 type FilterType = 'none' | 'grayscale' | 'sepia' | 'invert' | 'brightness';
 
-type KernelMap = Record<FilterType, any>;
+type KernelThis = {
+  thread: { x: number; y: number };
+  color: (r: number, g: number, b: number, a: number) => void;
+};
+type GpuKernel = {
+  setGraphical: (value: boolean) => GpuKernel;
+  setDynamicOutput: (value: boolean) => GpuKernel;
+  setOutput: (output: [number, number]) => GpuKernel;
+  canvas: HTMLCanvasElement;
+  (image: ImageData): void;
+};
+type GpuInstance = {
+  createKernel: (fn: (this: KernelThis, image: number[][][]) => void) => GpuKernel;
+};
+type GpuFactory = {
+  GPU: new () => GpuInstance;
+};
+type WindowWithGpu = Window & {
+  GPU?: GpuFactory;
+};
+type KernelMap = Record<FilterType, GpuKernel | null>;
 
 export function Camera() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const gpuRef = useRef<any>(null);
+  const gpuRef = useRef<GpuInstance | null>(null);
   const kernelsRef = useRef<KernelMap | null>(null);
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -26,43 +46,62 @@ export function Camera() {
 
   useEffect(() => {
     loadScriptOnce('https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.min.js').then(() => {
-      if (!window.GPU) {
+      const gpuFactory = (window as WindowWithGpu).GPU;
+      if (!gpuFactory) {
         setStatus('GPU.js failed to load.');
         return;
       }
-      const gpu = new window.GPU.GPU();
+      const gpu = new gpuFactory.GPU();
       gpuRef.current = gpu;
       kernelsRef.current = {
         none: null,
         grayscale: gpu
-          .createKernel(function (image: number[][][]) {
-            const pixel = image[this.thread.y][this.thread.x];
-            const gray = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2];
+          .createKernel(function (this: KernelThis, image: number[][][]) {
+            const row = (image[this.thread.y] ?? []) as number[][];
+            const pixel = (row[this.thread.x] ?? [0, 0, 0]) as number[];
+            const r = pixel[0] ?? 0;
+            const g = pixel[1] ?? 0;
+            const b = pixel[2] ?? 0;
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
             this.color(gray, gray, gray, 1);
           })
           .setGraphical(true)
           .setDynamicOutput(true),
         sepia: gpu
-          .createKernel(function (image: number[][][]) {
-            const pixel = image[this.thread.y][this.thread.x];
-            const r = pixel[0] * 0.393 + pixel[1] * 0.769 + pixel[2] * 0.189;
-            const g = pixel[0] * 0.349 + pixel[1] * 0.686 + pixel[2] * 0.168;
-            const b = pixel[0] * 0.272 + pixel[1] * 0.534 + pixel[2] * 0.131;
+          .createKernel(function (this: KernelThis, image: number[][][]) {
+            const row = (image[this.thread.y] ?? []) as number[][];
+            const pixel = (row[this.thread.x] ?? [0, 0, 0]) as number[];
+            const r0 = pixel[0] ?? 0;
+            const g0 = pixel[1] ?? 0;
+            const b0 = pixel[2] ?? 0;
+            const r = r0 * 0.393 + g0 * 0.769 + b0 * 0.189;
+            const g = r0 * 0.349 + g0 * 0.686 + b0 * 0.168;
+            const b = r0 * 0.272 + g0 * 0.534 + b0 * 0.131;
             this.color(Math.min(r, 1), Math.min(g, 1), Math.min(b, 1), 1);
           })
           .setGraphical(true)
           .setDynamicOutput(true),
         invert: gpu
-          .createKernel(function (image: number[][][]) {
-            const pixel = image[this.thread.y][this.thread.x];
-            this.color(1 - pixel[0], 1 - pixel[1], 1 - pixel[2], 1);
+          .createKernel(function (this: KernelThis, image: number[][][]) {
+            const row = (image[this.thread.y] ?? []) as number[][];
+            const pixel = (row[this.thread.x] ?? [0, 0, 0]) as number[];
+            const r = pixel[0] ?? 0;
+            const g = pixel[1] ?? 0;
+            const b = pixel[2] ?? 0;
+            this.color(1 - r, 1 - g, 1 - b, 1);
           })
           .setGraphical(true)
           .setDynamicOutput(true),
         brightness: gpu
-          .createKernel(function (image: number[][][]) {
-            const pixel = image[this.thread.y][this.thread.x];
-            this.color(Math.min(pixel[0] * 1.5, 1), Math.min(pixel[1] * 1.5, 1), Math.min(pixel[2] * 1.5, 1), 1);
+          .createKernel(function (this: KernelThis, image: number[][][]) {
+            const row = (image[this.thread.y] ?? []) as number[][];
+            const pixel = (row[this.thread.x] ?? [0, 0, 0]) as number[];
+            this.color(
+              Math.min((pixel[0] ?? 0) * 1.5, 1),
+              Math.min((pixel[1] ?? 0) * 1.5, 1),
+              Math.min((pixel[2] ?? 0) * 1.5, 1),
+              1
+            );
           })
           .setGraphical(true)
           .setDynamicOutput(true),
@@ -81,7 +120,7 @@ export function Camera() {
       rafRef.current = null;
     }
     setStatus('Camera is idle.');
-  }, [stream]);
+  }, []);
 
   const processFrame = useCallback(() => {
     if (!streamRef.current) {
@@ -157,9 +196,10 @@ export function Camera() {
       streamRef.current = mediaStream;
       setStream(mediaStream);
       setStatus('Camera running');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      setStatus(error?.message || 'Camera error');
+      const message = error instanceof Error ? error.message : 'Camera error';
+      setStatus(message);
     }
   }, [facingMode, getCameras, processFrame]);
 

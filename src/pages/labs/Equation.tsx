@@ -77,6 +77,9 @@ export function Equation() {
     ctx.strokeStyle = '#000000';
 
     strokesRef.current.forEach(stroke => {
+      if (!stroke[0]) {
+        return;
+      }
       ctx.beginPath();
       ctx.moveTo(stroke[0].x, stroke[0].y);
       stroke.forEach(point => ctx.lineTo(point.x, point.y));
@@ -252,8 +255,9 @@ export function Equation() {
         setLatex('변환할 수 있는 수식을 찾을 수 없습니다.');
         setRendered('인식된 수식이 없습니다.');
       }
-    } catch (error: any) {
-      setLatex(`API 오류: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setLatex(`API 오류: ${message}`);
       setRendered('오류가 발생했습니다.');
     } finally {
       setLoading(false);

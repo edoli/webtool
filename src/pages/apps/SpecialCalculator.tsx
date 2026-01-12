@@ -36,8 +36,9 @@ export function SpecialCalculator() {
 
   const inputs = useMemo<VariableInput[]>(() => {
     const extracted = extractVariables(formula.formula, mathContext.mathPredefined);
+    const variableInfo = 'variables' in formula ? (formula.variables as Record<string, string>) : undefined;
     return extracted.map(variable => {
-      const label = formula.variables?.[variable] ?? variable;
+      const label = variableInfo?.[variable] ?? variable;
       const type = variable.startsWith('number')
         ? 'number'
         : variable.startsWith('date')
@@ -71,7 +72,8 @@ export function SpecialCalculator() {
       return 'Error';
     }
 
-    if (formula.output === 'date') {
+    const output = 'output' in formula ? formula.output : undefined;
+    if (output === 'date') {
       return formatDuration(value);
     }
 
@@ -139,11 +141,11 @@ export function SpecialCalculator() {
 
 function formatDuration(milliseconds: number) {
   let totalDays = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
-  let years = Math.floor(totalDays / 365);
+  const years = Math.floor(totalDays / 365);
   totalDays %= 365;
 
-  let months = Math.floor(totalDays / 30);
-  let days = totalDays % 30;
+  const months = Math.floor(totalDays / 30);
+  const days = totalDays % 30;
 
   return `${years}년 ${months}개월 ${days}일, 총 ${totalDays}일`;
 }

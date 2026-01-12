@@ -48,7 +48,7 @@ export function HeicToJpg() {
         url,
         downloadName,
       };
-    } catch (_error) {
+    } catch {
       return {
         id: createId(),
         name: file.name,

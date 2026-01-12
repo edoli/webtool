@@ -5,7 +5,26 @@ import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   {
-    ignores: ['node_modules', 'dist', 'build', 'coverage', '.next', 'public/legacy'],
+    ignores: [
+      'node_modules',
+      'dist',
+      'build',
+      'coverage',
+      '.next',
+      'public/**',
+      'calculator/**',
+      'camera/**',
+      'convert/**',
+      'csv_viewer/**',
+      'equation/**',
+      'parse/**',
+      'pdf/**',
+      'python/**',
+      'web_collection/**',
+      'src/pdf/**',
+      'script.js',
+      'service-worker.js',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -32,6 +51,14 @@ export default [
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: ['**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-undef': 'off',
     },
   },
 ];

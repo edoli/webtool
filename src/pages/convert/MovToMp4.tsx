@@ -11,6 +11,23 @@ type FfmpegResult = {
   downloadName: string;
 };
 
+type FfmpegInstance = {
+  load: () => Promise<void>;
+  run: (...args: string[]) => Promise<void>;
+  FS: {
+    (command: 'writeFile', path: string, data: Uint8Array): void;
+    (command: 'readFile', path: string): Uint8Array;
+    (command: 'unlink', path: string): void;
+  };
+};
+type FfmpegLibrary = {
+  createFFmpeg: (options: { log: boolean }) => FfmpegInstance;
+  fetchFile: (file: File) => Promise<Uint8Array>;
+};
+type WindowWithFfmpeg = Window & {
+  FFmpeg?: FfmpegLibrary;
+};
+
 const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export function MovToMp4() {
@@ -18,7 +35,7 @@ export function MovToMp4() {
   const [status, setStatus] = useState<string>('Select MOV files to convert.');
   const [results, setResults] = useState<FfmpegResult[]>([]);
   const [processing, setProcessing] = useState(false);
-  const ffmpegRef = useRef<any>(null);
+  const ffmpegRef = useRef<FfmpegInstance | null>(null);
 
   useEffect(() => {
     return () => {
@@ -40,10 +57,11 @@ export function MovToMp4() {
     }
     setStatus('Loading FFmpeg...');
     await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.10.1/ffmpeg.min.js');
-    if (!window.FFmpeg) {
+    const ffmpegLib = (window as WindowWithFfmpeg).FFmpeg;
+    if (!ffmpegLib) {
       throw new Error('FFmpeg failed to load.');
     }
-    const instance = window.FFmpeg.createFFmpeg({ log: true });
+    const instance = ffmpegLib.createFFmpeg({ log: true });
     await instance.load();
     ffmpegRef.current = instance;
     return instance;
@@ -65,10 +83,17 @@ export function MovToMp4() {
 
     try {
       const ffmpeg = await ensureFfmpeg();
-      const { fetchFile } = window.FFmpeg;
+      const ffmpegLib = (window as WindowWithFfmpeg).FFmpeg;
+      if (!ffmpegLib) {
+        throw new Error('FFmpeg is not available.');
+      }
+      const { fetchFile } = ffmpegLib;
 
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index];
+        if (!file) {
+          continue;
+        }
         setStatus(`Converting ${file.name} (${index + 1}/${files.length})...`);
         const inputName = file.name;
         const outputName = `output-${index}.mp4`;

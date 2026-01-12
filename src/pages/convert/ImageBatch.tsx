@@ -8,6 +8,32 @@ import { loadStyleOnce } from '../../utils/loadStyle';
 
 const CODEMIRROR_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5';
 
+type CodeMirrorEditor = {
+  getValue: () => string;
+  setOption: (key: string, value: unknown) => void;
+  toTextArea: () => void;
+};
+type CodeMirrorGlobal = {
+  fromTextArea: (textarea: HTMLTextAreaElement, options: Record<string, unknown>) => CodeMirrorEditor;
+};
+type PyodideGlobals = {
+  clear: () => void;
+  set: (key: string, value: unknown) => void;
+  get: (key: string) => unknown;
+};
+type PyodideInstance = {
+  loadPackage: (packages: string[]) => Promise<void>;
+  loadPackagesFromImports: (code: string) => Promise<void>;
+  runPythonAsync: (code: string) => Promise<unknown>;
+  globals: PyodideGlobals;
+  FS: { readFile: (path: string, options: { encoding: 'binary' }) => Uint8Array };
+};
+type LoadPyodide = () => Promise<PyodideInstance>;
+type WindowWithPyodide = Window & {
+  CodeMirror?: CodeMirrorGlobal;
+  loadPyodide?: LoadPyodide;
+};
+
 type PreviewItem = {
   id: string;
   name: string;
@@ -16,8 +42,9 @@ type PreviewItem = {
 
 export function ImageBatch() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const editorRef = useRef<any>(null);
-  const pyodideRef = useRef<any>(null);
+  const editorRef = useRef<CodeMirrorEditor | null>(null);
+  const pyodideRef = useRef<PyodideInstance | null>(null);
+  const runPythonRef = useRef<() => void>(() => {});
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState('');
   const [autoDownload, setAutoDownload] = useState(false);
@@ -29,50 +56,6 @@ export function ImageBatch() {
       previews.forEach(item => URL.revokeObjectURL(item.url));
     };
   }, [previews]);
-
-  useEffect(() => {
-    const init = async () => {
-      await loadStyleOnce(`${CODEMIRROR_BASE}/codemirror.min.css`);
-      await loadStyleOnce(`${CODEMIRROR_BASE}/theme/material-palenight.min.css`);
-      await loadScriptOnce(`${CODEMIRROR_BASE}/codemirror.min.js`);
-      await loadScriptOnce(`${CODEMIRROR_BASE}/mode/python/python.min.js`);
-      await loadScriptOnce(`${CODEMIRROR_BASE}/addon/edit/matchbrackets.min.js`);
-
-      if (textareaRef.current && window.CodeMirror) {
-        editorRef.current = window.CodeMirror.fromTextArea(textareaRef.current, {
-          mode: 'python',
-          lineNumbers: true,
-          matchBrackets: true,
-          indentUnit: 4,
-          theme: 'material-palenight',
-        });
-        editorRef.current.setOption('extraKeys', {
-          'Ctrl-Enter': () => runPython(),
-        });
-      }
-
-      setStatus('Loading Python environment...');
-      await loadScriptOnce('https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js');
-      if (!window.loadPyodide) {
-        throw new Error('Pyodide failed to load.');
-      }
-      const pyodide = await window.loadPyodide();
-      await pyodide.loadPackagesFromImports(`
-import numpy as np
-import cv2
-import io
-import base64
-import micropip
-      `);
-      pyodideRef.current = pyodide;
-      setStatus('Python environment ready');
-    };
-
-    init().catch(error => {
-      console.error(error);
-      setStatus('Failed to initialize Python.');
-    });
-  }, []);
 
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
@@ -90,7 +73,15 @@ import micropip
           item.getAsString(text => {
             if (text.startsWith('data:image/')) {
               try {
-                const [meta, data] = text.split(',');
+                const parts = text.split(',');
+                if (parts.length < 2) {
+                  return;
+                }
+                const meta = parts[0];
+                const data = parts[1];
+                if (!meta || !data) {
+                  return;
+                }
                 const mime = /:(.*?);/.exec(meta)?.[1] ?? 'image/png';
                 const bstr = atob(data);
                 const u8arr = new Uint8Array(bstr.length);
@@ -163,6 +154,9 @@ sys.stdout = StdoutCatcher()
 
     for (let i = 0; i < files.length; i += 1) {
       const file = files[i];
+      if (!file) {
+        continue;
+      }
       setStatus(`Processing ${i + 1}/${files.length}: ${file.name}`);
       try {
         const arrayBuffer = await file.arrayBuffer();
@@ -201,12 +195,15 @@ else:
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
         `);
 
-        const codeResult = await pyodide.runPythonAsync(code);
-        outputLog += pyodide.globals.get('_console_output');
-        pyodide.globals.set('_console_output', '');
+    const codeResult = await pyodide.runPythonAsync(code);
+    const consoleOutput = pyodide.globals.get('_console_output');
+    if (typeof consoleOutput === 'string') {
+      outputLog += consoleOutput;
+    }
+    pyodide.globals.set('_console_output', '');
 
-        if (codeResult !== undefined) {
-          pyodide.globals.set('direct_result', codeResult);
+    if (codeResult !== undefined) {
+      pyodide.globals.set('direct_result', codeResult);
           await pyodide.runPythonAsync(`
 import numpy as np
 import cv2
@@ -238,7 +235,7 @@ else:
           const resultB64 = pyodide.globals.get('result_b64');
           const isArray = pyodide.globals.get('is_array');
 
-          if (resultB64) {
+          if (typeof resultB64 === 'string' && resultB64) {
             const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             setPreviews(prev => [
               ...prev,
@@ -254,10 +251,10 @@ else:
               link.download = `processed_${file.name.split('.')[0]}.png`;
               link.click();
             }
-          } else if (isArray) {
+          } else if (isArray === true) {
             outputLog += `\nCouldn't render numpy array as image. Check the shape and dtype.\n`;
           } else {
-            outputLog += `\nResult: ${codeResult}\n`;
+            outputLog += `\nResult: ${String(codeResult)}\n`;
           }
         }
       } catch (error) {
@@ -268,6 +265,75 @@ else:
     setLogs(outputLog);
     setStatus('Processing complete');
   }, [autoDownload, files]);
+
+  useEffect(() => {
+    runPythonRef.current = runPython;
+  }, [runPython]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const init = async () => {
+      await loadStyleOnce(`${CODEMIRROR_BASE}/codemirror.min.css`);
+      await loadStyleOnce(`${CODEMIRROR_BASE}/theme/material-palenight.min.css`);
+      await loadScriptOnce(`${CODEMIRROR_BASE}/codemirror.min.js`);
+      await loadScriptOnce(`${CODEMIRROR_BASE}/mode/python/python.min.js`);
+      await loadScriptOnce(`${CODEMIRROR_BASE}/addon/edit/matchbrackets.min.js`);
+
+      if (cancelled) {
+        return;
+      }
+
+      const codeMirror = (window as WindowWithPyodide).CodeMirror;
+      if (textareaRef.current && codeMirror && !editorRef.current) {
+        editorRef.current = codeMirror.fromTextArea(textareaRef.current, {
+          mode: 'python',
+          lineNumbers: true,
+          matchBrackets: true,
+          indentUnit: 4,
+          theme: 'material-palenight',
+        });
+        editorRef.current.setOption('extraKeys', {
+          'Ctrl-Enter': () => runPythonRef.current(),
+        });
+      }
+
+      setStatus('Loading Python environment...');
+      await loadScriptOnce('https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js');
+      if (cancelled) {
+        return;
+      }
+      const loadPyodide = (window as WindowWithPyodide).loadPyodide;
+      if (!loadPyodide) {
+        throw new Error('Pyodide failed to load.');
+      }
+      const pyodide = await loadPyodide();
+      if (cancelled) {
+        return;
+      }
+      await pyodide.loadPackagesFromImports(`
+import numpy as np
+import cv2
+import io
+import base64
+import micropip
+      `);
+      pyodideRef.current = pyodide;
+      setStatus('Python environment ready');
+    };
+
+    init().catch(error => {
+      console.error(error);
+      setStatus('Failed to initialize Python.');
+    });
+    return () => {
+      cancelled = true;
+      if (editorRef.current) {
+        editorRef.current.toTextArea();
+        editorRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <ToolLayout title="Image Batch Process" description="Run Python scripts on batches of images." badge="Converter">

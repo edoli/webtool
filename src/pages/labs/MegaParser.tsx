@@ -55,25 +55,28 @@ export function MegaParser() {
 
       const univText = cells[6]?.textContent?.trim() ?? '';
       const univMatch = univText.match(/(.*?)\s*\(\s*(자교|타교)(\d+)등\s*\)/);
-      rowData.push(univMatch ? univMatch[1] : univText);
-      rowData.push(univMatch && univMatch[2] === '자교' ? univMatch[3] : '');
-      rowData.push(univMatch && univMatch[2] === '타교' ? univMatch[3] : '');
+      const univName = univMatch?.[1] ?? univText;
+      const univRankType = univMatch?.[2];
+      const univRank = univMatch?.[3] ?? '';
+      rowData.push(univName);
+      rowData.push(univRankType === '자교' ? univRank : '');
+      rowData.push(univRankType === '타교' ? univRank : '');
 
       const majorText = cells[7]?.textContent?.trim() ?? '';
       const majorMatch = majorText.match(/(.*?)\s*\(\s*(법학|비법학)(\d+)등\s*\)/);
-      rowData.push(majorMatch ? majorMatch[1] : majorText);
+      rowData.push(majorMatch?.[1] ?? majorText);
 
       rowData.push(cells[8]?.textContent?.trim() ?? '');
 
       const otherAppText = cells[9]?.textContent?.trim() ?? '';
       const otherAppMatch = otherAppText.match(/(.*?)\s*\(\s*(.*?)\s*\)/);
-      rowData.push(otherAppMatch ? otherAppMatch[1] : '');
-      rowData.push(otherAppMatch ? otherAppMatch[2] : '');
+      rowData.push(otherAppMatch?.[1] ?? '');
+      rowData.push(otherAppMatch?.[2] ?? '');
 
       const englishScoreText = cells[3]?.textContent?.trim() ?? '';
       const englishMatch = englishScoreText.match(/(\d+\.?\d*)점\s*\(\s*(.*?)\s*\)/);
-      rowData.push(englishMatch ? parseFloat(englishMatch[1]) : '');
-      rowData.push(englishMatch ? englishMatch[2] : '');
+      rowData.push(englishMatch?.[1] ? parseFloat(englishMatch[1]) : '');
+      rowData.push(englishMatch?.[2] ?? '');
 
       const paperworkText = cells[5]?.textContent?.trim() ?? '';
       const paperworkItems = paperworkText.split('\n').map(item => item.trim());
@@ -87,17 +90,19 @@ export function MegaParser() {
 
       paperworkItems.forEach(item => {
         const parts = item.split('] ');
-        if (parts.length === 2) {
-          const key = parts[0].slice(1);
-          paperworkData[key] = parts[1];
+        const key = parts[0];
+        const value = parts[1];
+        if (!key || !value) {
+          return;
         }
+        paperworkData[key.slice(1)] = value;
       });
 
-      rowData.push(paperworkData['봉사']);
-      rowData.push(paperworkData['수상경력']);
-      rowData.push(paperworkData['경력']);
-      rowData.push(paperworkData['기타자격증']);
-      rowData.push(paperworkData['대학원 논문']);
+      rowData.push(paperworkData['봉사'] ?? '');
+      rowData.push(paperworkData['수상경력'] ?? '');
+      rowData.push(paperworkData['경력'] ?? '');
+      rowData.push(paperworkData['기타자격증'] ?? '');
+      rowData.push(paperworkData['대학원 논문'] ?? '');
 
       data.push(rowData);
     });
@@ -158,5 +163,5 @@ export function MegaParser() {
 
 function parseScore(scoreText: string) {
   const match = scoreText.match(/(\d+(?:\.\d+)?)/);
-  return match ? parseFloat(match[1]) : '';
+  return match?.[1] ? parseFloat(match[1]) : '';
 }

@@ -113,6 +113,9 @@ export function WebCollection() {
       setLinks(prev => {
         const next = [...prev];
         const [moved] = next.splice(sourceIndex, 1);
+        if (!moved) {
+          return prev;
+        }
         next.splice(targetIndex, 0, moved);
         return next;
       });

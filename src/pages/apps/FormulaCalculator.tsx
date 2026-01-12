@@ -167,8 +167,6 @@ export function FormulaCalculator() {
 
   return (
     <ToolLayout
-      title="Formula Calculator"
-      description="Create chained formulas with variables and reusable results."
       badge="Apps"
     >
       <div className="formula-panel">

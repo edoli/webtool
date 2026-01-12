@@ -14,6 +14,100 @@
   gap: var(--space-7);
 }
 
+.home-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.home-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-1);
+  display: grid;
+  gap: var(--space-6);
+}
+
+.home-header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.home-kicker {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--color-secondary);
+}
+
+.home-title {
+  font-size: clamp(2.2rem, 3vw, 3.2rem);
+  line-height: 1.1;
+  font-weight: 800;
+  color: transparent;
+  background-image: linear-gradient(90deg, #2d6cdf, #1fb7a3);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.home-subtitle {
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.home-section {
+  gap: var(--space-4);
+}
+
+.section-title {
+  font-size: 1.25rem;
+}
+
+.section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(52, 152, 219, 0.12);
+  color: var(--color-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.tool-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.tool-button {
+  display: grid;
+  gap: 6px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--color-border);
+  background: #f6f8fb;
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.tool-button:hover {
+  background: rgba(52, 152, 219, 0.08);
+  border-color: rgba(52, 152, 219, 0.4);
+}
+
+.tool-button__title {
+  font-weight: 700;
+}
+
+.tool-button__desc {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -80,6 +174,15 @@
   gap: var(--space-4);
 }
 
+.tool-page--compact {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.tool-page--extend {
+  max-width: none;
+}
+
 .tool-header {
   display: grid;
   gap: var(--space-2);
@@ -124,5 +227,9 @@
 @media (max-width: 960px) {
   .app-main {
     padding: var(--space-4);
+  }
+
+  .home-panel {
+    padding: var(--space-5);
   }
 }

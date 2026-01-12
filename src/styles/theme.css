@@ -20,10 +20,10 @@
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
+  --space-4: 14px;
+  --space-5: 20px;
+  --space-6: 28px;
+  --space-7: 36px;
 
   --shadow-1: 0 8px 24px var(--color-shadow);
   --shadow-2: 0 16px 36px rgba(27, 23, 18, 0.18);

@@ -13,21 +13,6 @@ export function Home() {
             Keep every utility in one
             <span className="hero-accent"> focused workspace.</span>
           </h1>
-          <p className="hero-subtitle">
-            빠른 웹 툴을 한 곳에 모아 작업을 덜 끊기게 정리했어요. 변환, 분석, 실험까지
-            전부 로컬에서 처리합니다.
-          </p>
-        </div>
-        <div className="hero-panel">
-          <div className="hero-panel__title">Unified Theme</div>
-          <p className="hero-panel__body">
-            모든 툴을 동일한 타이포, 컬러, 간격 시스템으로 묶어서 UI를 일관되게 유지합니다.
-          </p>
-          <div className="hero-panel__chips">
-            <span className="chip">React + TS</span>
-            <span className="chip">Modular UI</span>
-            <span className="chip">Local-first</span>
-          </div>
         </div>
       </section>
 

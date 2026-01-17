@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/Button';
-import { ToolLayout } from '../../components/ToolLayout';
+import { FullToolLayout } from '../../components/FullToolLayout';
 import { loadScriptOnce } from '../../utils/loadScript';
 import { loadStyleOnce } from '../../utils/loadStyle';
 
@@ -177,7 +177,7 @@ fig_count
   }, [runPython]);
 
   return (
-    <ToolLayout badge="Apps" extend={true}>
+    <FullToolLayout badge="Apps">
       <div className="code-layout python-editor">
         <div className="code-panel code-panel--editor">
           <div className="code-editor">
@@ -203,6 +203,6 @@ fig_count
           </div>
         </div>
       </div>
-    </ToolLayout>
+    </FullToolLayout>
   );
 }

@@ -20,6 +20,21 @@ type FormulaResult = {
   error?: string;
 };
 
+const encodeBase64 = (value: string) => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+};
+
+const decodeBase64 = (value: string) => {
+  const binary = atob(value);
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+};
+
 const createFormula = (template = ''): FormulaItem => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   template,
@@ -100,7 +115,16 @@ export function FormulaCalculator() {
 
     if (formulaParam) {
       try {
-        const templates = atob(decodeURIComponent(formulaParam)).split(',');
+        const decoded = decodeBase64(decodeURIComponent(formulaParam));
+        let templates: string[] = [];
+        try {
+          const parsed = JSON.parse(decoded);
+          if (Array.isArray(parsed)) {
+            templates = parsed.map(item => String(item));
+          }
+        } catch {
+          templates = decoded.split(',');
+        }
         if (templates.length) {
           setFormulas(templates.map(template => createFormula(template)));
         }
@@ -111,7 +135,7 @@ export function FormulaCalculator() {
 
     if (variablesParam) {
       try {
-        const decoded = JSON.parse(atob(decodeURIComponent(variablesParam)));
+        const decoded = JSON.parse(decodeBase64(decodeURIComponent(variablesParam)));
         if (decoded && typeof decoded === 'object') {
           setVariables(decoded as Record<string, string>);
         }
@@ -122,7 +146,7 @@ export function FormulaCalculator() {
 
     if (optionParam) {
       try {
-        const decoded = JSON.parse(atob(decodeURIComponent(optionParam)));
+        const decoded = JSON.parse(decodeBase64(decodeURIComponent(optionParam)));
         if (decoded && typeof decoded.useDegree === 'boolean') {
           setUseDegree(decoded.useDegree);
         }
@@ -133,9 +157,9 @@ export function FormulaCalculator() {
   }, []);
 
   useEffect(() => {
-    const encodedFormula = encodeURIComponent(btoa(formulas.map(formula => formula.template).join(',')));
-    const encodedVariables = encodeURIComponent(btoa(JSON.stringify(variables)));
-    const encodedOptions = encodeURIComponent(btoa(JSON.stringify({ useDegree })));
+    const encodedFormula = encodeURIComponent(encodeBase64(JSON.stringify(formulas.map(formula => formula.template))));
+    const encodedVariables = encodeURIComponent(encodeBase64(JSON.stringify(variables)));
+    const encodedOptions = encodeURIComponent(encodeBase64(JSON.stringify({ useDegree })));
     const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}&o=${encodedOptions}`;
     window.history.replaceState(null, '', url);
   }, [formulas, useDegree, variables]);

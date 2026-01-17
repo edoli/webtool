@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import * as Papa from 'papaparse';
 import { DropZone } from '../../components/DropZone';
-import { ToolLayout } from '../../components/ToolLayout';
+import { FullToolLayout } from '../../components/FullToolLayout';
 
 export function CsvViewer() {
   const [rows, setRows] = useState<Record<string, string | number>[]>([]);
@@ -43,7 +43,7 @@ export function CsvViewer() {
   const displayedRows = useMemo(() => rows.slice(0, 500), [rows]);
 
   return (
-    <ToolLayout title="CSV Viewer" description="Inspect CSV tables quickly in the browser." badge="Apps">
+    <FullToolLayout title="CSV Viewer" description="Inspect CSV tables quickly in the browser." badge="Apps">
       <div className="csv-viewer">
         <DropZone
           label="Drag and drop a CSV file here or click to select"
@@ -78,7 +78,7 @@ export function CsvViewer() {
           </div>
         ) : null}
       </div>
-    </ToolLayout>
+    </FullToolLayout>
   );
 }
 

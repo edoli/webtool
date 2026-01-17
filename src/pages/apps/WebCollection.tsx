@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../components/Button';
-import { ToolLayout } from '../../components/ToolLayout';
+import { FullToolLayout } from '../../components/FullToolLayout';
 
 type LinkItem = {
   id: number;
@@ -125,9 +125,9 @@ export function WebCollection() {
   );
 
   return (
-    <ToolLayout title="Web Collection" description="Save and open favorite web pages." badge="Apps">
+    <FullToolLayout title="Web Collection" description="Save and open favorite web pages." badge="Apps">
       <div className="web-collection">
-        <div className="web-sidebar" style={{ display: sidebarOpen ? 'grid' : 'none' }}>
+        <div className="web-sidebar" style={{ display: sidebarOpen ? 'flex' : 'none' }}>
           <div>
             <h3>웹페이지 컬렉션</h3>
             <p className="muted">링크를 추가하고 바로 열어보세요.</p>
@@ -207,7 +207,7 @@ export function WebCollection() {
           )}
         </div>
       </div>
-    </ToolLayout>
+    </FullToolLayout>
   );
 }
 

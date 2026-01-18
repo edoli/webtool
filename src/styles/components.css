@@ -17,7 +17,6 @@
 
 .button:hover {
   background: var(--color-primary-strong);
-  transform: translateY(-1px);
   box-shadow: var(--shadow-2);
 }
 

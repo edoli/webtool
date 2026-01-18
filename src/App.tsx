@@ -13,7 +13,6 @@ import { PythonEditor } from './pages/apps/PythonEditor';
 import { WebCollection } from './pages/apps/WebCollection';
 import { Equation } from './pages/labs/Equation';
 import { PdfTool } from './pages/labs/PdfTool';
-import { MegaParser } from './pages/labs/MegaParser';
 import { NotFound } from './pages/NotFound';
 
 export default function App() {
@@ -33,7 +32,6 @@ export default function App() {
         <Route path="/apps/python-editor" element={<PythonEditor />} />
         <Route path="/labs/equation" element={<Equation />} />
         <Route path="/labs/pdf" element={<PdfTool />} />
-        <Route path="/labs/mega" element={<MegaParser />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppShell>

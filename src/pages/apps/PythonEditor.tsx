@@ -177,7 +177,7 @@ fig_count
   }, [runPython]);
 
   return (
-    <FullToolLayout badge="Apps">
+    <FullToolLayout title="Python Editor" description="Run Python directly in the browser." badge="Apps" hideHeader>
       <div className="code-layout python-editor">
         <div className="code-panel code-panel--editor">
           <div className="code-editor">

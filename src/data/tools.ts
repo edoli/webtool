@@ -106,14 +106,6 @@ export const tools: Tool[] = [
     category: 'labs',
     status: 'ready',
   },
-  {
-    id: 'mega',
-    title: 'Mega Parser',
-    description: 'Parse and inspect mega files.',
-    path: '/labs/mega',
-    category: 'labs',
-    status: 'ready',
-  },
 ];
 
 export const toolCategories: Record<ToolCategory, { label: string; blurb: string }> = {

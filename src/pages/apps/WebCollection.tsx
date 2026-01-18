@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { DragEvent } from 'react';
 import { Button } from '../../components/Button';
 import { FullToolLayout } from '../../components/FullToolLayout';
 
@@ -16,6 +17,8 @@ export function WebCollection() {
   const [urlInput, setUrlInput] = useState('');
   const [status, setStatus] = useState('');
   const [openedIds, setOpenedIds] = useState<number[]>([]);
+  const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -104,30 +107,86 @@ export function WebCollection() {
     setOpenedIds(prev => (prev.includes(link.id) ? prev : [...prev, link.id]));
   }, []);
 
-  const handleDrop = useCallback(
-    (targetIndex: number) => {
-      const sourceIndex = dragIndexRef.current;
-      if (sourceIndex === null || sourceIndex === targetIndex) {
+  const handleDragStart = useCallback((event: DragEvent<HTMLDivElement>, index: number) => {
+    dragIndexRef.current = index;
+    setDragSourceIndex(index);
+    setDropIndex(index);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+  }, []);
+
+  const handleDragOverList = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (dragSourceIndex === null) {
         return;
       }
-      setLinks(prev => {
-        const next = [...prev];
-        const [moved] = next.splice(sourceIndex, 1);
-        if (!moved) {
-          return prev;
-        }
-        next.splice(targetIndex, 0, moved);
-        return next;
-      });
-      dragIndexRef.current = null;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      setDropIndex(links.length);
     },
-    []
+    [dragSourceIndex, links.length]
   );
 
+  const handleDragOverItem = useCallback((event: DragEvent<HTMLDivElement>, index: number) => {
+    if (dragSourceIndex === null) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    const rect = event.currentTarget.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const nextIndex = event.clientY < midpoint ? index : index + 1;
+    setDropIndex(nextIndex);
+  }, [dragSourceIndex]);
+
+  const commitDrop = useCallback((targetIndex: number) => {
+    const sourceIndex = dragIndexRef.current;
+    if (sourceIndex === null || sourceIndex === targetIndex) {
+      return;
+    }
+    setLinks(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(sourceIndex, 1);
+      if (!moved) {
+        return prev;
+      }
+      const adjustedIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      next.splice(adjustedIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const handleDrop = useCallback((event: DragEvent<HTMLDivElement>, targetIndex: number) => {
+    event.preventDefault();
+    const resolvedIndex = dropIndex ?? targetIndex;
+    commitDrop(resolvedIndex);
+    dragIndexRef.current = null;
+    setDragSourceIndex(null);
+    setDropIndex(null);
+  }, [commitDrop, dropIndex]);
+
+  const handleDropAtEnd = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (dragSourceIndex === null) {
+      return;
+    }
+    const resolvedIndex = dropIndex ?? links.length;
+    commitDrop(resolvedIndex);
+    dragIndexRef.current = null;
+    setDragSourceIndex(null);
+    setDropIndex(null);
+  }, [commitDrop, dragSourceIndex, dropIndex, links.length]);
+
+  const handleDragEnd = useCallback(() => {
+    dragIndexRef.current = null;
+    setDragSourceIndex(null);
+    setDropIndex(null);
+  }, []);
+
   return (
-    <FullToolLayout title="Web Collection" description="Save and open favorite web pages." badge="Apps">
-      <div className="web-collection">
-        <div className="web-sidebar" style={{ display: sidebarOpen ? 'flex' : 'none' }}>
+    <FullToolLayout title="Web Collection" description="Save and open favorite web pages." badge="Apps" hideHeader>
+      <div className={`web-collection${sidebarOpen ? '' : ' web-collection--collapsed'}`}>
+        <div className="web-sidebar" style={{ display: sidebarOpen ? 'grid' : 'none' }}>
           <div>
             <h3>웹페이지 컬렉션</h3>
             <p className="muted">링크를 추가하고 바로 열어보세요.</p>
@@ -146,32 +205,38 @@ export function WebCollection() {
               onChange={event => setUrlInput(event.target.value)}
             />
             <Button onClick={addLink}>링크 추가</Button>
-            {status ? <div className="message-box">{status}</div> : null}
+            <div className="web-status" aria-live="polite">
+              {status ? <div className="message-box">{status}</div> : null}
+            </div>
           </div>
-          <div className="web-links">
+          <div className="web-links" onDragOver={handleDragOverList} onDrop={handleDropAtEnd}>
             {links.length === 0 ? (
               <div className="muted">아직 추가된 링크가 없습니다.</div>
             ) : (
-              links.map((link, index) => (
-                <div
-                  key={link.id}
-                  className={`web-link ${activeId === link.id ? 'active' : ''}`}
-                  draggable
-                  onDragStart={() => {
-                    dragIndexRef.current = index;
-                  }}
-                  onDragOver={event => event.preventDefault()}
-                  onDrop={() => handleDrop(index)}
-                >
-                  <div style={{ flex: 1 }} onClick={() => handleSelect(link)}>
-                    <div className="web-link-title">{link.title}</div>
-                    <div className="web-link-url">{link.url}</div>
+              links.map((link, index) => {
+                const isDropBefore = dragSourceIndex !== null && dropIndex === index;
+                const isDropAfter = dragSourceIndex !== null && dropIndex === index + 1;
+                const isDragSource = dragSourceIndex === index;
+                return (
+                  <div
+                    key={link.id}
+                    className={`web-link ${activeId === link.id ? 'active' : ''} ${isDragSource ? 'drag-source' : ''} ${isDropBefore ? 'drop-before' : ''} ${isDropAfter ? 'drop-after' : ''}`}
+                    draggable
+                    onDragStart={event => handleDragStart(event, index)}
+                    onDragOver={event => handleDragOverItem(event, index)}
+                    onDrop={event => handleDrop(event, index)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div style={{ flex: 1 }} onClick={() => handleSelect(link)}>
+                      <div className="web-link-title">{link.title}</div>
+                      <div className="web-link-url">{link.url}</div>
+                    </div>
+                    <Button variant="ghost" onClick={() => deleteLink(link.id)}>
+                      Remove
+                    </Button>
                   </div>
-                  <Button variant="ghost" onClick={() => deleteLink(link.id)}>
-                    Remove
-                  </Button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

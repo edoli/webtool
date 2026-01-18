@@ -43,7 +43,7 @@ export function CsvViewer() {
   const displayedRows = useMemo(() => rows.slice(0, 500), [rows]);
 
   return (
-    <FullToolLayout title="CSV Viewer" description="Inspect CSV tables quickly in the browser." badge="Apps">
+    <FullToolLayout title="CSV Viewer" description="Inspect CSV tables quickly in the browser." badge="Apps" hideHeader>
       <div className="csv-viewer">
         <DropZone
           label="Drag and drop a CSV file here or click to select"

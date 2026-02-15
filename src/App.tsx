@@ -5,6 +5,7 @@ import { MotionPhoto } from './pages/convert/MotionPhoto';
 import { HeicToJpg } from './pages/convert/HeicToJpg';
 import { MovToMp4 } from './pages/convert/MovToMp4';
 import { ImageBatch } from './pages/convert/ImageBatch';
+import { ImageToBase64 } from './pages/convert/ImageToBase64';
 import { Camera } from './pages/apps/Camera';
 import { FormulaCalculator } from './pages/apps/FormulaCalculator';
 import { SpecialCalculator } from './pages/apps/SpecialCalculator';
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/convert/heic-to-jpg" element={<HeicToJpg />} />
         <Route path="/convert/mov-to-mp4" element={<MovToMp4 />} />
         <Route path="/convert/image-batch" element={<ImageBatch />} />
+        <Route path="/convert/image-to-base64" element={<ImageToBase64 />} />
         <Route path="/apps/camera" element={<Camera />} />
         <Route path="/apps/calculator" element={<FormulaCalculator />} />
         <Route path="/apps/special-calculator" element={<SpecialCalculator />} />

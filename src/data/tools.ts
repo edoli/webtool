@@ -43,6 +43,14 @@ export const tools: Tool[] = [
     status: 'ready',
   },
   {
+    id: 'image-to-base64',
+    title: 'Image to Base64',
+    description: 'Convert images into Base64 data URLs.',
+    path: '/convert/image-to-base64',
+    category: 'convert',
+    status: 'ready',
+  },
+  {
     id: 'camera',
     title: 'Camera',
     description: 'Live camera with GPU filters.',

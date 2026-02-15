@@ -12,7 +12,7 @@ export type ToolLayoutProps = {
   layout?: 'compact' | 'extend' | 'full';
 };
 
-export function ToolLayout({ title, description, children, badge, extend, hideHeader, layout }: ToolLayoutProps) {
+export function ToolLayout({ title, children, badge, extend, hideHeader, layout }: ToolLayoutProps) {
   const resolvedLayout = layout ?? (extend ? 'extend' : 'compact');
   const sectionClass = `tool-page tool-page--${resolvedLayout}${hideHeader ? ' tool-page--no-header' : ''}`;
   const headerClass = resolvedLayout === 'full' ? 'tool-header tool-header--full' : 'tool-header';
@@ -33,7 +33,6 @@ export function ToolLayout({ title, description, children, badge, extend, hideHe
               </div>
             ) : null
           }
-          {/* {description ? <p className="tool-subtitle">{description}</p> : null} */}
         </div>
       )}
       {showCard ? <Card className={cardClass}>{children}</Card> : <div className={cardClass}>{children}</div>}

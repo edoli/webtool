@@ -44,7 +44,7 @@ export function ImageBatch() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const editorRef = useRef<CodeMirrorEditor | null>(null);
   const pyodideRef = useRef<PyodideInstance | null>(null);
-  const runPythonRef = useRef<() => void>(() => {});
+  const runPythonRef = useRef<() => void>(() => { });
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState('');
   const [autoDownload, setAutoDownload] = useState(false);
@@ -195,15 +195,15 @@ else:
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
         `);
 
-    const codeResult = await pyodide.runPythonAsync(code);
-    const consoleOutput = pyodide.globals.get('_console_output');
-    if (typeof consoleOutput === 'string') {
-      outputLog += consoleOutput;
-    }
-    pyodide.globals.set('_console_output', '');
+        const codeResult = await pyodide.runPythonAsync(code);
+        const consoleOutput = pyodide.globals.get('_console_output');
+        if (typeof consoleOutput === 'string') {
+          outputLog += consoleOutput;
+        }
+        pyodide.globals.set('_console_output', '');
 
-    if (codeResult !== undefined) {
-      pyodide.globals.set('direct_result', codeResult);
+        if (codeResult !== undefined) {
+          pyodide.globals.set('direct_result', codeResult);
           await pyodide.runPythonAsync(`
 import numpy as np
 import cv2
@@ -293,7 +293,8 @@ else:
           indentUnit: 4,
           theme: 'material-palenight',
         });
-        editorRef.current.setOption('extraKeys', {
+        const editor = editorRef.current;
+        editor?.setOption('extraKeys', {
           'Ctrl-Enter': () => runPythonRef.current(),
         });
       }

@@ -98,7 +98,8 @@ fig_count
         const urls: string[] = [];
         for (let index = 0; index < figCount; index += 1) {
           const data = pyodide.FS.readFile(`/plot_${index}.png`, { encoding: 'binary' });
-          const blob = new Blob([data], { type: 'image/png' });
+          const pngBytes = Uint8Array.from(data);
+          const blob = new Blob([pngBytes], { type: 'image/png' });
           urls.push(URL.createObjectURL(blob));
         }
         setImages(urls);
@@ -135,7 +136,8 @@ fig_count
             indentUnit: 4,
             theme: 'material-palenight',
           });
-          editorRef.current.setOption('extraKeys', {
+          const editor = editorRef.current;
+          editor?.setOption('extraKeys', {
             'Ctrl-Enter': () => runPython(),
           });
         }

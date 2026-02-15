@@ -76,6 +76,43 @@
   justify-content: center;
 }
 
+.formula-action-button {
+  box-shadow: none;
+}
+
+.formula-action-button--add {
+  color: #2a56c3;
+  background: rgba(46, 95, 216, 0.12);
+  border-color: rgba(46, 95, 216, 0.24);
+}
+
+.formula-action-button--add:hover:not(:disabled) {
+  color: #2047ad;
+  background: rgba(46, 95, 216, 0.2);
+  border-color: rgba(46, 95, 216, 0.34);
+  box-shadow: none;
+}
+
+.formula-action-button--remove {
+  color: #b94434;
+  background: rgba(211, 77, 58, 0.12);
+  border-color: rgba(211, 77, 58, 0.24);
+}
+
+.formula-action-button--remove:hover:not(:disabled) {
+  color: #a03a2d;
+  background: rgba(211, 77, 58, 0.2);
+  border-color: rgba(211, 77, 58, 0.34);
+  box-shadow: none;
+}
+
+.formula-action-button:disabled {
+  opacity: 0.55;
+  background: rgba(160, 148, 138, 0.16);
+  border-color: #d2cac2;
+  color: #8f8377;
+}
+
 .icon-button {
   width: 38px;
   height: 38px;

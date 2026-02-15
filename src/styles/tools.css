@@ -168,10 +168,14 @@
   grid-template-columns: 60px minmax(0, 1fr);
   gap: var(--space-3);
   align-items: center;
-  padding: var(--space-2) var(--space-4);
+  padding: 2px var(--space-2);
   border-radius: var(--radius-s);
-  background: #fff7ef;
-  border: 1px solid rgba(255, 90, 60, 0.15);
+  background: transparent;
+  border: none;
+}
+
+.variable-item:focus-within {
+  background: rgba(196, 107, 0, 0.06);
 }
 
 .variable-label {
@@ -585,7 +589,7 @@
   cursor: grabbing;
 }
 
-.web-link > div {
+.web-link>div {
   min-width: 0;
 }
 

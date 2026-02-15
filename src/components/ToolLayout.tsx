@@ -33,7 +33,7 @@ export function ToolLayout({ title, description, children, badge, extend, hideHe
               </div>
             ) : null
           }
-          {description ? <p className="tool-subtitle">{description}</p> : null}
+          {/* {description ? <p className="tool-subtitle">{description}</p> : null} */}
         </div>
       )}
       {showCard ? <Card className={cardClass}>{children}</Card> : <div className={cardClass}>{children}</div>}

@@ -35,15 +35,102 @@ const decodeBase64 = (value: string) => {
   return new TextDecoder().decode(bytes);
 };
 
+const getQueryParams = () => {
+  if (window.location.search) {
+    return new URLSearchParams(window.location.search);
+  }
+  const hash = window.location.hash;
+  const queryIndex = hash.indexOf('?');
+  if (queryIndex !== -1) {
+    return new URLSearchParams(hash.slice(queryIndex));
+  }
+  return new URLSearchParams();
+};
+
+const buildUrlWithParams = (params: URLSearchParams) => {
+  const hash = window.location.hash;
+  const queryIndex = hash.indexOf('?');
+  const hasHashRoute = hash.startsWith('#/');
+  if (hasHashRoute) {
+    const hashBase = queryIndex === -1 ? hash : hash.slice(0, queryIndex);
+    const search = window.location.search;
+    return `${window.location.pathname}${search}${hashBase}?${params.toString()}`;
+  }
+  const hashSuffix = queryIndex === -1 ? hash : hash.slice(0, queryIndex);
+  return `${window.location.pathname}?${params.toString()}${hashSuffix}`;
+};
+
 const createFormula = (template = ''): FormulaItem => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   template,
 });
 
 export function FormulaCalculator() {
-  const [formulas, setFormulas] = useState<FormulaItem[]>([createFormula('')]);
-  const [variables, setVariables] = useState<Record<string, string>>({});
-  const [useDegree, setUseDegree] = useState(false);
+  const initialState = useMemo(() => {
+    const params = getQueryParams();
+    const formulaParam = params.get('f');
+    const variablesParam = params.get('v');
+    const optionParam = params.get('o');
+
+    let templates: string[] = [];
+    if (formulaParam) {
+      try {
+        const decoded = decodeBase64(decodeURIComponent(formulaParam));
+        try {
+          const parsed = JSON.parse(decoded);
+          if (Array.isArray(parsed)) {
+            templates = parsed.map(item => String(item));
+          }
+        } catch {
+          templates = decoded.split(',');
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    let variablesFromUrl: Record<string, string> = {};
+    if (variablesParam) {
+      try {
+        const decoded = JSON.parse(decodeBase64(decodeURIComponent(variablesParam)));
+        if (decoded && typeof decoded === 'object') {
+          variablesFromUrl = Object.fromEntries(
+            Object.entries(decoded as Record<string, string | number>).map(([key, value]) => [key, String(value)])
+          );
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    let useDegreeFromUrl = false;
+    if (optionParam) {
+      try {
+        const decoded = JSON.parse(decodeBase64(decodeURIComponent(optionParam)));
+        if (decoded && typeof decoded.useDegree === 'boolean') {
+          useDegreeFromUrl = decoded.useDegree;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!templates.length) {
+      templates = [''];
+    }
+
+    return {
+      templates,
+      variables: variablesFromUrl,
+      useDegree: useDegreeFromUrl,
+    };
+  }, []);
+
+  const [formulas, setFormulas] = useState<FormulaItem[]>(() =>
+    initialState.templates.map(template => createFormula(template))
+  );
+  const [variables, setVariables] = useState<Record<string, string>>(() => initialState.variables);
+  const [useDegree, setUseDegree] = useState(() => initialState.useDegree);
   const [focusedVariable, setFocusedVariable] = useState<string | null>(null);
   const [cursorVariable, setCursorVariable] = useState<string | null>(null);
   const [focusedResult, setFocusedResult] = useState<string | null>(null);
@@ -108,59 +195,14 @@ export function FormulaCalculator() {
   }, [formulas, mathContext, variables]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const formulaParam = params.get('f');
-    const variablesParam = params.get('v');
-    const optionParam = params.get('o');
-
-    if (formulaParam) {
-      try {
-        const decoded = decodeBase64(decodeURIComponent(formulaParam));
-        let templates: string[] = [];
-        try {
-          const parsed = JSON.parse(decoded);
-          if (Array.isArray(parsed)) {
-            templates = parsed.map(item => String(item));
-          }
-        } catch {
-          templates = decoded.split(',');
-        }
-        if (templates.length) {
-          setFormulas(templates.map(template => createFormula(template)));
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    if (variablesParam) {
-      try {
-        const decoded = JSON.parse(decodeBase64(decodeURIComponent(variablesParam)));
-        if (decoded && typeof decoded === 'object') {
-          setVariables(decoded as Record<string, string>);
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    if (optionParam) {
-      try {
-        const decoded = JSON.parse(decodeBase64(decodeURIComponent(optionParam)));
-        if (decoded && typeof decoded.useDegree === 'boolean') {
-          setUseDegree(decoded.useDegree);
-        }
-      } catch {
-        // ignore
-      }
-    }
-  }, []);
-
-  useEffect(() => {
     const encodedFormula = encodeURIComponent(encodeBase64(JSON.stringify(formulas.map(formula => formula.template))));
     const encodedVariables = encodeURIComponent(encodeBase64(JSON.stringify(variables)));
     const encodedOptions = encodeURIComponent(encodeBase64(JSON.stringify({ useDegree })));
-    const url = `${window.location.pathname}?f=${encodedFormula}&v=${encodedVariables}&o=${encodedOptions}`;
+    const params = new URLSearchParams();
+    params.set('f', encodedFormula);
+    params.set('v', encodedVariables);
+    params.set('o', encodedOptions);
+    const url = buildUrlWithParams(params);
     window.history.replaceState(null, '', url);
   }, [formulas, useDegree, variables]);
 

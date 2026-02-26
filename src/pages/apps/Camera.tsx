@@ -30,7 +30,6 @@ type KernelMap = Record<FilterType, GpuKernel | null>;
 export function Camera() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const gpuRef = useRef<GpuInstance | null>(null);
   const kernelsRef = useRef<KernelMap | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -230,25 +229,8 @@ export function Camera() {
     link.click();
   }, [capturedPhoto]);
 
-  const toggleFullscreen = useCallback(async () => {
-    if (!containerRef.current) {
-      return;
-    }
-    if (!document.fullscreenElement) {
-      await containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      await document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener('fullscreenchange', handleChange);
-    return () => document.removeEventListener('fullscreenchange', handleChange);
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
   }, []);
 
   useEffect(() => {
@@ -257,12 +239,13 @@ export function Camera() {
 
   return (
     <ToolLayout title="Camera" description="Live camera with GPU filters." badge="Apps">
-      <div ref={containerRef} className="camera-shell">
+      <div className={`camera-shell${isFullscreen ? ' camera-shell--page-fullscreen' : ''}`}>
         <div className="camera-media">
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }} />
           <canvas ref={canvasRef} />
           {!stream ? <div className="camera-message">카메라가 꺼져있습니다</div> : null}
         </div>
+        <div className="camera-controls-trigger" aria-hidden="true" />
         <div className="camera-controls">
           <select value={filter} onChange={event => setFilter(event.target.value as FilterType)}>
             <option value="none">필터 없음</option>

@@ -4,10 +4,12 @@ import { Toggle } from '../../components/Toggle';
 import { ToolLayout } from '../../components/ToolLayout';
 import {
   calculateExpression,
+  type CommaMode,
   createMathContext,
   extractVariables,
   getVariableAtCursor,
   highlightFormula,
+  parseLocaleNumber,
 } from '../../utils/formula';
 
 type FormulaItem = {
@@ -104,11 +106,15 @@ export function FormulaCalculator() {
     }
 
     let useDegreeFromUrl = false;
+    let commaModeFromUrl: CommaMode = 'group';
     if (optionParam) {
       try {
         const decoded = JSON.parse(decodeBase64(decodeURIComponent(optionParam)));
         if (decoded && typeof decoded.useDegree === 'boolean') {
           useDegreeFromUrl = decoded.useDegree;
+        }
+        if (decoded && (decoded.commaMode === 'group' || decoded.commaMode === 'decimal')) {
+          commaModeFromUrl = decoded.commaMode;
         }
       } catch {
         // ignore
@@ -123,6 +129,7 @@ export function FormulaCalculator() {
       templates,
       variables: variablesFromUrl,
       useDegree: useDegreeFromUrl,
+      commaMode: commaModeFromUrl,
     };
   }, []);
 
@@ -131,6 +138,7 @@ export function FormulaCalculator() {
   );
   const [variables, setVariables] = useState<Record<string, string>>(() => initialState.variables);
   const [useDegree, setUseDegree] = useState(() => initialState.useDegree);
+  const [commaMode, setCommaMode] = useState<CommaMode>(() => initialState.commaMode);
   const [focusedVariable, setFocusedVariable] = useState<string | null>(null);
   const [cursorVariable, setCursorVariable] = useState<string | null>(null);
   const [focusedResult, setFocusedResult] = useState<string | null>(null);
@@ -169,7 +177,8 @@ export function FormulaCalculator() {
       const vars = extractVariables(formula.template, mathContext.mathPredefined);
       const localVars: Record<string, number> = {};
       vars.forEach(name => {
-        localVars[name] = Number(variables[name] ?? 0);
+        const parsed = parseLocaleNumber(variables[name] ?? '0', commaMode);
+        localVars[name] = Number.isFinite(parsed) ? parsed : 0;
       });
 
       const context = {
@@ -178,7 +187,7 @@ export function FormulaCalculator() {
         ...localVars,
       };
 
-      const value = calculateExpression(formula.template, context);
+      const value = calculateExpression(formula.template, context, { commaMode });
 
       if (typeof value === 'number' && !Number.isNaN(value)) {
         tmpContext[`r${index + 1}`] = value;
@@ -192,19 +201,19 @@ export function FormulaCalculator() {
     });
 
     return { results: nextResults, errors: nextErrors };
-  }, [formulas, mathContext, variables]);
+  }, [commaMode, formulas, mathContext, variables]);
 
   useEffect(() => {
     const encodedFormula = encodeURIComponent(encodeBase64(JSON.stringify(formulas.map(formula => formula.template))));
     const encodedVariables = encodeURIComponent(encodeBase64(JSON.stringify(variables)));
-    const encodedOptions = encodeURIComponent(encodeBase64(JSON.stringify({ useDegree })));
+    const encodedOptions = encodeURIComponent(encodeBase64(JSON.stringify({ useDegree, commaMode })));
     const params = new URLSearchParams();
     params.set('f', encodedFormula);
     params.set('v', encodedVariables);
     params.set('o', encodedOptions);
     const url = buildUrlWithParams(params);
     window.history.replaceState(null, '', url);
-  }, [formulas, useDegree, variables]);
+  }, [commaMode, formulas, useDegree, variables]);
 
   const updateFormula = useCallback((id: string, template: string) => {
     setFormulas(prev => prev.map(formula => (formula.id === id ? { ...formula, template } : formula)));
@@ -244,6 +253,11 @@ export function FormulaCalculator() {
             checked={useDegree}
             onChange={event => setUseDegree(event.target.checked)}
             label="Use degree (instead of radian)"
+          />
+          <Toggle
+            checked={commaMode === 'decimal'}
+            onChange={event => setCommaMode(event.target.checked ? 'decimal' : 'group')}
+            label="Treat comma as decimal separator"
           />
         </div>
         <div className="formula-list">
@@ -352,7 +366,8 @@ export function FormulaCalculator() {
             <div key={name} className="variable-item">
               <span className={`variable-label ${cursorVariable === name ? 'focused' : ''}`}>{name}</span>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={variables[name] ?? ''}
                 className={`variable-input ${cursorVariable === name ? 'focused' : ''}`}
                 onFocus={() => setFocusedVariable(name)}
@@ -368,6 +383,7 @@ export function FormulaCalculator() {
           ))}
         </div>
         <div className="formula-info">
+          {commaMode === 'decimal' ? <p>When decimal comma mode is on, use ; to separate function arguments.</p> : null}
           <p>Available functions: {functionsList}</p>
           <p>Available constants: {constantsList}</p>
         </div>

@@ -49,6 +49,11 @@
   white-space: pre;
   overflow-x: auto;
   color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: normal;
+  line-height: 1.6;
 }
 
 .formula-input {
@@ -62,8 +67,11 @@
   background: transparent;
   border: none;
   padding: 6px 10px;
+  font-family: var(--font-sans);
   font-size: inherit;
   font-weight: inherit;
+  letter-spacing: normal;
+  line-height: 1.6;
 }
 
 .formula-input:focus {
@@ -144,7 +152,6 @@
 .highlight-result-focused {
   background: rgba(247, 201, 69, 0.35);
   border-radius: 4px;
-  padding: 0 3px;
 }
 
 .highlight-variable {
@@ -155,7 +162,6 @@
   color: #c46b00;
   background: rgba(247, 201, 69, 0.3);
   border-radius: 4px;
-  padding: 0 3px;
 }
 
 .variable-grid {

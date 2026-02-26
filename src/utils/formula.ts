@@ -4,6 +4,8 @@ export type MathContext = {
   mathPredefined: Record<string, number | ((...args: number[]) => number)>;
 };
 
+export type CommaMode = 'group' | 'decimal';
+
 export function createMathContext(useDegree: boolean): MathContext {
   const mathFunctions: Record<string, (...args: number[]) => number> = {
     rad: (deg: number) => deg * Math.PI / 180,
@@ -50,6 +52,33 @@ export function createMathContext(useDegree: boolean): MathContext {
   return { mathFunctions, mathConstants, mathPredefined };
 }
 
+const decimalCommaPattern = /\b\d+,\d+\b/g;
+const semicolonArgPattern = /;/g;
+
+function normalizeCommas(expression: string, commaMode: CommaMode) {
+  if (commaMode === 'decimal') {
+    return expression
+      .replace(decimalCommaPattern, value => value.replace(',', '.'))
+      .replace(semicolonArgPattern, ',');
+  }
+
+  return expression.replace(/,/g, '');
+}
+
+export function parseLocaleNumber(rawValue: string | number, commaMode: CommaMode): number {
+  if (typeof rawValue === 'number') {
+    return rawValue;
+  }
+
+  const compact = rawValue.replace(/\s+/g, '').trim();
+  if (!compact) {
+    return 0;
+  }
+
+  const normalized = normalizeCommas(compact, commaMode);
+  return Number(normalized);
+}
+
 export function extractVariables(formula: string, mathPredefined: MathContext['mathPredefined']): string[] {
   const predefinedNames = Object.keys(mathPredefined);
   const pattern = predefinedNames.length
@@ -60,9 +89,14 @@ export function extractVariables(formula: string, mathPredefined: MathContext['m
   return Array.from(vars);
 }
 
-export function calculateExpression(formula: string, context: Record<string, number | ((...args: number[]) => number)>) {
+export function calculateExpression(
+  formula: string,
+  context: Record<string, number | ((...args: number[]) => number)>,
+  options?: { commaMode?: CommaMode }
+) {
   try {
-    const normalized = formula.replace('×', '*').replace('÷', '/');
+    const commaMode = options?.commaMode ?? 'group';
+    const normalized = normalizeCommas(formula.replace('×', '*').replace('÷', '/'), commaMode);
     const fn = new Function(...Object.keys(context), `return ${normalized}`);
     return fn(...Object.values(context));
   } catch (error) {

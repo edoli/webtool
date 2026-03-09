@@ -15,6 +15,16 @@
   cursor: pointer;
 }
 
+.button-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.button-lg {
+  padding: 12px 22px;
+  font-size: 1rem;
+}
+
 .button:hover {
   background: var(--color-primary-strong);
   box-shadow: var(--shadow-2);
@@ -68,6 +78,13 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
+}
+
+.input-sm,
+.select-sm,
+.textarea-sm {
+  padding: 6px 8px;
+  font-size: 0.85rem;
 }
 
 textarea {

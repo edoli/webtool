@@ -174,8 +174,8 @@ export function Camera() {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
         },
       });
 
@@ -247,24 +247,24 @@ export function Camera() {
         </div>
         <div className="camera-controls-trigger" aria-hidden="true" />
         <div className="camera-controls">
-          <select value={filter} onChange={event => setFilter(event.target.value as FilterType)}>
+          <select value={filter} onChange={event => setFilter(event.target.value as FilterType)} className='select-sm'>
             <option value="none">필터 없음</option>
             <option value="grayscale">흑백</option>
             <option value="sepia">세피아</option>
             <option value="invert">색상 반전</option>
             <option value="brightness">밝기 증가</option>
           </select>
-          <Button onClick={stream ? stopStream : startCamera}>{stream ? '카메라 끄기' : '카메라 켜기'}</Button>
-          <Button onClick={capturePhoto} disabled={!stream}>
+          <Button onClick={stream ? stopStream : startCamera} size='sm'>{stream ? '카메라 끄기' : '카메라 켜기'}</Button>
+          <Button onClick={capturePhoto} disabled={!stream} size='sm'>
             사진 촬영
           </Button>
-          <Button onClick={switchCamera} disabled={!stream || cameras.length < 2}>
+          <Button onClick={switchCamera} disabled={!stream || cameras.length < 2} size='sm'>
             카메라 전환
           </Button>
-          <Button onClick={downloadPhoto} disabled={!capturedPhoto}>
+          <Button onClick={downloadPhoto} disabled={!capturedPhoto} size='sm'>
             사진 저장
           </Button>
-          <Button onClick={toggleFullscreen}>{isFullscreen ? '전체화면 종료' : '전체화면'}</Button>
+          <Button onClick={toggleFullscreen} size='sm'>{isFullscreen ? '전체화면 종료' : '전체화면'}</Button>
           <span className="muted">{status}</span>
         </div>
         {capturedPhoto ? <img src={capturedPhoto} alt="Captured" className="fill-parent-width" /> : null}

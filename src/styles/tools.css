@@ -754,6 +754,7 @@
 .tool-page--full .python-editor .code-panel--side>.image-grid {
   margin: 0;
   padding: var(--space-4);
+  overflow: auto;
 }
 
 .tool-page--full .python-editor .code-panel--side {

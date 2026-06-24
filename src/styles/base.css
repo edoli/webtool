@@ -35,3 +35,8 @@ ul {
   list-style: none;
   padding: 0;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(152, 152, 255, 0.5) transparent;
+}

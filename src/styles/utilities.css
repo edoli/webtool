@@ -221,6 +221,7 @@
 .tool-page--full {
   max-width: none;
   min-height: 100dvh;
+  max-height: 100dvh;
   grid-template-rows: auto 1fr;
   gap: 0;
 }

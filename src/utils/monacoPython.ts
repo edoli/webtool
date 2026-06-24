@@ -57,8 +57,6 @@ export type PythonCompletionSpec = {
   kind?: PythonCompletionKind;
 };
 
-type ModuleCompletionCatalog = Record<string, PythonCompletionSpec[]>;
-
 type Monaco = {
   KeyMod: {
     CtrlCmd: number;
@@ -87,7 +85,7 @@ type Monaco = {
         provideCompletionItems: (
           model: MonacoModel,
           position: MonacoPosition,
-        ) => { suggestions: MonacoCompletionItem[] };
+        ) => { suggestions: MonacoCompletionItem[] } | Promise<{ suggestions: MonacoCompletionItem[] }>;
       },
     ) => MonacoDisposable;
   };
@@ -190,152 +188,11 @@ const PYTHON_COMPLETIONS: PythonCompletionSpec[] = [
   },
 ];
 
-const MODULE_COMPLETIONS: ModuleCompletionCatalog = {
-  cv2: [
-    {
-      label: 'cvtColor',
-      insertText: 'cvtColor(${1:image}, {alias}.COLOR_${2:RGB2GRAY})',
-      detail: 'OpenCV',
-      documentation: 'Convert image color space.',
-    },
-    {
-      label: 'GaussianBlur',
-      insertText: 'GaussianBlur(${1:image}, (${2:5}, ${2:5}), ${3:0})',
-      detail: 'OpenCV',
-      documentation: 'Blur an image.',
-    },
-    {
-      label: 'resize',
-      insertText: 'resize(${1:image}, (${2:width}, ${3:height}))',
-      detail: 'OpenCV',
-      documentation: 'Resize an image.',
-    },
-    {
-      label: 'threshold',
-      insertText: 'threshold(${1:image}, ${2:127}, ${3:255}, {alias}.THRESH_${4:BINARY})',
-      detail: 'OpenCV',
-      documentation: 'Apply a fixed-level threshold.',
-    },
-    {
-      label: 'Canny',
-      insertText: 'Canny(${1:image}, ${2:100}, ${3:200})',
-      detail: 'OpenCV',
-      documentation: 'Detect edges using the Canny algorithm.',
-    },
-    {
-      label: 'imdecode',
-      insertText: 'imdecode(${1:buffer}, {alias}.IMREAD_UNCHANGED)',
-      detail: 'OpenCV',
-      documentation: 'Decode an image from a memory buffer.',
-    },
-    {
-      label: 'imencode',
-      insertText: 'imencode("${1:.png}", ${2:image})',
-      detail: 'OpenCV',
-      documentation: 'Encode an image into a memory buffer.',
-    },
-  ],
-  numpy: [
-    {
-      label: 'array',
-      insertText: 'array(${1:values})',
-      detail: 'NumPy',
-      documentation: 'Create a NumPy array.',
-    },
-    {
-      label: 'asarray',
-      insertText: 'asarray(${1:values})',
-      detail: 'NumPy',
-      documentation: 'Convert input to a NumPy array.',
-    },
-    {
-      label: 'linspace',
-      insertText: 'linspace(${1:start}, ${2:stop}, ${3:num})',
-      detail: 'NumPy',
-      documentation: 'Create evenly spaced values.',
-    },
-    {
-      label: 'zeros',
-      insertText: 'zeros(${1:shape}, dtype={alias}.uint8)',
-      detail: 'NumPy',
-      documentation: 'Create an array filled with zeros.',
-    },
-    {
-      label: 'ones',
-      insertText: 'ones(${1:shape}, dtype={alias}.uint8)',
-      detail: 'NumPy',
-      documentation: 'Create an array filled with ones.',
-    },
-    {
-      label: 'clip',
-      insertText: 'clip(${1:array}, ${2:0}, ${3:255})',
-      detail: 'NumPy',
-      documentation: 'Clip array values to a range.',
-    },
-  ],
-  'matplotlib.pyplot': [
-    {
-      label: 'figure',
-      insertText: 'figure()\n${0}',
-      detail: 'matplotlib',
-      documentation: 'Create a new figure.',
-    },
-    {
-      label: 'plot',
-      insertText: 'plot(${1:x}, ${2:y})',
-      detail: 'matplotlib',
-      documentation: 'Plot x and y values.',
-    },
-    {
-      label: 'imshow',
-      insertText: 'imshow(${1:image})',
-      detail: 'matplotlib',
-      documentation: 'Display an image array.',
-    },
-    {
-      label: 'title',
-      insertText: 'title("${1:title}")',
-      detail: 'matplotlib',
-      documentation: 'Set the axes title.',
-    },
-    {
-      label: 'grid',
-      insertText: 'grid(${1:True})',
-      detail: 'matplotlib',
-      documentation: 'Configure grid lines.',
-    },
-    {
-      label: 'show',
-      insertText: 'show()',
-      detail: 'matplotlib',
-      documentation: 'Display all open figures.',
-    },
-  ],
-  pandas: [
-    {
-      label: 'DataFrame',
-      insertText: 'DataFrame(${1:data})',
-      detail: 'pandas',
-      documentation: 'Create a pandas DataFrame.',
-    },
-    {
-      label: 'Series',
-      insertText: 'Series(${1:data})',
-      detail: 'pandas',
-      documentation: 'Create a pandas Series.',
-    },
-    {
-      label: 'read_csv',
-      insertText: 'read_csv(${1:path})',
-      detail: 'pandas',
-      documentation: 'Read a CSV file into a DataFrame.',
-    },
-  ],
-};
-
 let monacoPromise: Promise<Monaco> | null = null;
 let pythonCompletionsRegistered = false;
 const customCompletionsByModel = new WeakMap<MonacoModel, PythonCompletionSpec[]>();
+let moduleCompletionManifestPromise: Promise<Record<string, string>> | null = null;
+const moduleCompletionCache = new Map<string, Promise<PythonCompletionSpec[]>>();
 
 function loadMonaco() {
   if (monacoPromise) {
@@ -434,13 +291,13 @@ function extractLocalPythonNames(code: string) {
 
 function extractImportedModules(code: string) {
   const aliases = new Map<string, string>();
-  const catalogModules = new Set(Object.keys(MODULE_COMPLETIONS));
+  const supportedModules = new Set(['cv2', 'numpy', 'matplotlib.pyplot', 'pandas']);
 
   for (const line of code.split(/\r?\n/)) {
     const importMatch = /^\s*import\s+([\w.]+)(?:\s+as\s+([A-Za-z_]\w*))?/.exec(line);
     if (importMatch) {
       const moduleName = importMatch[1];
-      if (moduleName && catalogModules.has(moduleName)) {
+      if (moduleName && supportedModules.has(moduleName)) {
         const alias = importMatch[2] ?? moduleName;
         aliases.set(alias, moduleName);
       }
@@ -456,7 +313,7 @@ function extractImportedModules(code: string) {
       }
       const alias = fromImportMatch[3] ?? importedName;
       const moduleName = `${parentModule}.${importedName}`;
-      if (catalogModules.has(moduleName)) {
+      if (supportedModules.has(moduleName)) {
         aliases.set(alias, moduleName);
       }
     }
@@ -470,6 +327,42 @@ function getMemberAccessAlias(model: MonacoModel, position: MonacoPosition) {
   return /([A-Za-z_]\w*)\.$/.exec(linePrefix)?.[1] ?? null;
 }
 
+function loadModuleCompletionManifest() {
+  if (!moduleCompletionManifestPromise) {
+    moduleCompletionManifestPromise = fetch('/python-completions/manifest.json').then(response => {
+      if (!response.ok) {
+        throw new Error(`Failed to load Python completion manifest: ${response.status}`);
+      }
+      return response.json() as Promise<Record<string, string>>;
+    });
+  }
+
+  return moduleCompletionManifestPromise;
+}
+
+async function loadModuleCompletions(moduleName: string) {
+  if (!moduleCompletionCache.has(moduleName)) {
+    moduleCompletionCache.set(
+      moduleName,
+      loadModuleCompletionManifest().then(async manifest => {
+        const fileName = manifest[moduleName];
+        if (!fileName) {
+          return [];
+        }
+
+        const response = await fetch(`/python-completions/${fileName}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load Python completions for ${moduleName}: ${response.status}`);
+        }
+
+        return response.json() as Promise<PythonCompletionSpec[]>;
+      }),
+    );
+  }
+
+  return moduleCompletionCache.get(moduleName) as Promise<PythonCompletionSpec[]>;
+}
+
 function registerPythonCompletions(monaco: Monaco) {
   if (pythonCompletionsRegistered) {
     return;
@@ -477,7 +370,7 @@ function registerPythonCompletions(monaco: Monaco) {
 
   monaco.languages.registerCompletionItemProvider('python', {
     triggerCharacters: ['.', '(', '[', '_'],
-    provideCompletionItems: (model, position) => {
+    provideCompletionItems: async (model, position) => {
       const word = model.getWordUntilPosition(position);
       const range = {
         startLineNumber: position.lineNumber,
@@ -490,8 +383,11 @@ function registerPythonCompletions(monaco: Monaco) {
 
       if (memberAlias) {
         const moduleName = importedModules.get(memberAlias);
-        const moduleCompletions = moduleName ? MODULE_COMPLETIONS[moduleName] : undefined;
-        if (moduleCompletions) {
+        if (moduleName) {
+          const moduleCompletions = await loadModuleCompletions(moduleName).catch(error => {
+            console.warn(error);
+            return [];
+          });
           return {
             suggestions: moduleCompletions.map(completion =>
               createSuggestion(monaco, range, completion, memberAlias),

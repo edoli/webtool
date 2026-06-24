@@ -1,0 +1,6 @@
+{
+  "cv2": "cv2.json",
+  "numpy": "numpy.json",
+  "matplotlib.pyplot": "matplotlib-pyplot.json",
+  "pandas": "pandas.json"
+}

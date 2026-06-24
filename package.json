@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host --port 9243",
     "build": "tsc -b && vite build",
+    "generate:python-completions": "python scripts/generate-python-completions.py",
     "preview": "vite preview",
     "lint": "eslint ."
   },

@@ -193,11 +193,11 @@ fig_count
             <span className="muted">{status}</span>
           </div>
         </div>
-        <div className="code-panel full-tool-surface">
-          <div className="muted">출력 결과:</div>
-          <div className="output-box">{output}</div>
-          <div className="muted">그래프 출력:</div>
-          <div className="image-grid">
+        <div className="code-panel code-panel--side full-tool-surface">
+          <div className="muted full-tool-panel">출력 결과:</div>
+          <div className="output-box full-tool-panel">{output}</div>
+          <div className="muted full-tool-panel">그래프 출력:</div>
+          <div className="image-grid full-tool-panel">
             {images.length === 0 ? <div className="message-box">그래프가 여기에 표시됩니다.</div> : null}
             {images.map(url => (
               <img key={url} src={url} alt="Plot" className="fill-parent-width" />

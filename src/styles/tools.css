@@ -712,6 +712,11 @@
   border-radius: 0;
 }
 
+.tool-page--full .full-tool-panel {
+  margin: 0;
+  border-radius: 0;
+}
+
 .tool-page--full .tool-card--full>.full-tool-surface {
   min-height: 100%;
 }
@@ -724,28 +729,10 @@
   max-height: none;
 }
 
-.tool-page--full .web-viewer {
-  border: 0;
-  border-left: 1px solid var(--color-border);
-}
-
-.tool-page--full .web-collection--collapsed .web-viewer {
-  border-left: 0;
-}
-
 .tool-page--full .web-sidebar {
   border-right: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.tool-page--full .web-link,
-.tool-page--full .output-box,
-.tool-page--full .fill-parent-width {
-  border-radius: 0;
-}
-
-.tool-page--full .code-panel {
-  border-right: 1px solid var(--color-border-layout);
-}
 
 .tool-page--full .python-editor .code-panel>* {
   margin: 0;
@@ -757,22 +744,20 @@
 
 .tool-page--full .python-editor .toolbar {
   padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--color-border-layout);
 }
 
-.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.muted {
+.tool-page--full .python-editor .code-panel--side>.muted {
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border-layout);
 }
 
-.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.output-box,
-.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.image-grid {
+.tool-page--full .python-editor .code-panel--side>.output-box,
+.tool-page--full .python-editor .code-panel--side>.image-grid {
   margin: 0;
   padding: var(--space-4);
 }
 
-.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.output-box {
-  border-bottom: 1px solid var(--color-border-layout);
+.tool-page--full .python-editor .code-panel--side {
+  grid-template-rows: auto 1fr auto 1fr;
 }
 
 @media (max-width: 1000px) {

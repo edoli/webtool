@@ -197,6 +197,7 @@ textarea {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-s);
   background: rgba(31, 154, 166, 0.08);
+  border: 1px solid rgba(52, 152, 219, 0.4);
   color: var(--color-muted);
   font-size: 0.9rem;
 }

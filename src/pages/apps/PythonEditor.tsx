@@ -180,9 +180,9 @@ fig_count
 
   return (
     <FullToolLayout title="Python Editor" description="Run Python directly in the browser." badge="Apps" hideHeader>
-      <div className="code-layout python-editor">
-        <div className="code-panel code-panel--editor">
-          <div className="code-editor">
+      <div className="code-layout python-editor full-tool-surface">
+        <div className="code-panel code-panel--editor full-tool-surface">
+          <div className="code-editor full-tool-surface">
             <textarea
               ref={textareaRef}
               defaultValue={`import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\nprint(f'x: {x}')\nprint(f'y: {y}')\n\nplt.figure()\nplt.plot(x, y)\nplt.title("Sine Wave")\nplt.xlabel("X")\nplt.ylabel("Y")\nplt.grid(True)`}
@@ -193,7 +193,7 @@ fig_count
             <span className="muted">{status}</span>
           </div>
         </div>
-        <div className="code-panel">
+        <div className="code-panel full-tool-surface">
           <div className="muted">출력 결과:</div>
           <div className="output-box">{output}</div>
           <div className="muted">그래프 출력:</div>

@@ -185,8 +185,8 @@ export function WebCollection() {
 
   return (
     <FullToolLayout title="Web Collection" description="Save and open favorite web pages." badge="Apps" hideHeader>
-      <div className={`web-collection${sidebarOpen ? '' : ' web-collection--collapsed'}`}>
-        <div className="web-sidebar" style={{ display: sidebarOpen ? 'grid' : 'none' }}>
+      <div className={`web-collection full-tool-surface${sidebarOpen ? '' : ' web-collection--collapsed'}`}>
+        <div className="web-sidebar full-tool-surface" style={{ display: sidebarOpen ? 'grid' : 'none' }}>
           <div>
             <h3>웹페이지 컬렉션</h3>
             <p className="muted">링크를 추가하고 바로 열어보세요.</p>
@@ -240,7 +240,7 @@ export function WebCollection() {
             )}
           </div>
         </div>
-        <div className="web-viewer">
+        <div className="web-viewer full-tool-surface">
           <div className="web-header">
             <Button variant="outline" onClick={() => setSidebarOpen(prev => !prev)}>
               {sidebarOpen ? 'Hide Menu' : 'Show Menu'}

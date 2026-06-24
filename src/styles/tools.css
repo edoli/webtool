@@ -703,35 +703,76 @@
   border: none;
 }
 
-.tool-page--full .csv-viewer {
-  min-height: 100%;
+.tool-page--full .full-tool-surface {
   height: 100%;
-  grid-template-rows: auto auto auto 1fr;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  border-radius: 0;
 }
 
-.tool-page--full .table-shell {
-  min-height: 0;
-  height: 100%;
+.tool-page--full .tool-card--full>.full-tool-surface {
+  min-height: 100%;
+}
+
+.tool-page--full .csv-viewer {
+  grid-template-rows: auto auto auto 1fr;
 }
 
 .tool-page--full .table-scroll {
   max-height: none;
-  height: 100%;
-}
-
-.tool-page--full .python-editor {
-  min-height: 100%;
-  height: 100%;
-}
-
-.tool-page--full .web-collection {
-  min-height: 100%;
-  height: 100%;
 }
 
 .tool-page--full .web-viewer {
-  min-height: 0;
-  height: 100%;
+  border: 0;
+  border-left: 1px solid var(--color-border);
+}
+
+.tool-page--full .web-collection--collapsed .web-viewer {
+  border-left: 0;
+}
+
+.tool-page--full .web-sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tool-page--full .web-link,
+.tool-page--full .output-box,
+.tool-page--full .fill-parent-width {
+  border-radius: 0;
+}
+
+.tool-page--full .code-panel {
+  border-right: 1px solid var(--color-border-layout);
+}
+
+.tool-page--full .python-editor .code-panel>* {
+  margin: 0;
+}
+
+.tool-page--full .code-panel:last-child {
+  border-right: 0;
+}
+
+.tool-page--full .python-editor .toolbar {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border-layout);
+}
+
+.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.muted {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-layout);
+}
+
+.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.output-box,
+.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.image-grid {
+  margin: 0;
+  padding: var(--space-4);
+}
+
+.tool-page--full .python-editor .code-panel:not(.code-panel--editor)>.output-box {
+  border-bottom: 1px solid var(--color-border-layout);
 }
 
 @media (max-width: 1000px) {
@@ -749,5 +790,24 @@
 
   .web-collection {
     grid-template-columns: 1fr;
+  }
+
+  .tool-page--full .web-viewer {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tool-page--full .web-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .tool-page--full .code-panel {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tool-page--full .code-panel:last-child {
+    border-bottom: 0;
   }
 }

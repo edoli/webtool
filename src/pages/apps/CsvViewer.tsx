@@ -44,7 +44,7 @@ export function CsvViewer() {
 
   return (
     <FullToolLayout title="CSV Viewer" description="Inspect CSV tables quickly in the browser." badge="Apps" hideHeader>
-      <div className="csv-viewer">
+      <div className="csv-viewer full-tool-surface">
         <DropZone
           label="Drag and drop a CSV file here or click to select"
           hint="Large files will be previewed (first 500 rows)."
@@ -54,8 +54,8 @@ export function CsvViewer() {
         {fileInfo ? <div className="message-box">{fileInfo}</div> : null}
         {loading ? <div className="message-box">Processing CSV...</div> : null}
         {hasData ? (
-          <div className="table-shell">
-            <div className="table-scroll">
+          <div className="table-shell full-tool-surface">
+            <div className="table-scroll full-tool-surface">
               <table className="data-table">
                 <thead>
                   <tr>

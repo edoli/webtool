@@ -348,7 +348,6 @@
   min-height: 360px;
   height: 100%;
   overflow: hidden;
-  border-radius: var(--radius-s);
 }
 
 .code-editor--compact .monaco-editor-shell {

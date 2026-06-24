@@ -30,6 +30,7 @@ type MonacoPosition = {
 
 type MonacoEditorInstance = {
   getValue: () => string;
+  getModel: () => MonacoModel | null;
   dispose: () => void;
   addCommand: (keybinding: number, handler: () => void) => string | null;
   layout: () => void;
@@ -43,6 +44,16 @@ type MonacoCompletionItem = {
   documentation?: string;
   detail?: string;
   range: MonacoRange;
+};
+
+export type PythonCompletionKind = 'function' | 'keyword' | 'module' | 'variable';
+
+export type PythonCompletionSpec = {
+  label: string;
+  insertText: string;
+  detail: string;
+  documentation: string;
+  kind?: PythonCompletionKind;
 };
 
 type Monaco = {
@@ -91,10 +102,129 @@ type PythonEditorOptions = {
   onRun?: () => void;
   minimap?: boolean;
   isCancelled?: () => boolean;
+  completions?: PythonCompletionSpec[];
 };
+
+const PYTHON_COMPLETIONS: PythonCompletionSpec[] = [
+  {
+    label: 'print',
+    insertText: 'print(${1:value})',
+    detail: 'Python builtin',
+    documentation: 'Write a value to stdout.',
+  },
+  {
+    label: 'range',
+    insertText: 'range(${1:stop})',
+    detail: 'Python builtin',
+    documentation: 'Create an integer sequence.',
+  },
+  {
+    label: 'len',
+    insertText: 'len(${1:value})',
+    detail: 'Python builtin',
+    documentation: 'Return the length of a collection.',
+  },
+  {
+    label: 'enumerate',
+    insertText: 'enumerate(${1:items})',
+    detail: 'Python builtin',
+    documentation: 'Iterate with indexes.',
+  },
+  {
+    label: 'list comprehension',
+    insertText: '[${1:item} for ${1:item} in ${2:items}]',
+    detail: 'Snippet',
+    documentation: 'Create a list from an iterable.',
+  },
+  {
+    label: 'for',
+    insertText: 'for ${1:item} in ${2:items}:\n    ${0:pass}',
+    detail: 'Snippet',
+    documentation: 'Create a for loop.',
+    kind: 'keyword',
+  },
+  {
+    label: 'if',
+    insertText: 'if ${1:condition}:\n    ${0:pass}',
+    detail: 'Snippet',
+    documentation: 'Create an if block.',
+    kind: 'keyword',
+  },
+  {
+    label: 'try',
+    insertText: 'try:\n    ${1:pass}\nexcept Exception as error:\n    ${0:print(error)}',
+    detail: 'Snippet',
+    documentation: 'Handle Python exceptions.',
+    kind: 'keyword',
+  },
+  {
+    label: 'import numpy',
+    insertText: 'import numpy as np',
+    detail: 'Pyodide package',
+    documentation: 'Import NumPy.',
+    kind: 'module',
+  },
+  {
+    label: 'import pandas',
+    insertText: 'import pandas as pd',
+    detail: 'Pyodide package',
+    documentation: 'Import pandas.',
+    kind: 'module',
+  },
+  {
+    label: 'import matplotlib',
+    insertText: 'import matplotlib.pyplot as plt',
+    detail: 'Pyodide package',
+    documentation: 'Import matplotlib pyplot.',
+    kind: 'module',
+  },
+  {
+    label: 'np.linspace',
+    insertText: 'np.linspace(${1:start}, ${2:stop}, ${3:num})',
+    detail: 'NumPy',
+    documentation: 'Create evenly spaced values.',
+  },
+  {
+    label: 'np.array',
+    insertText: 'np.array(${1:values})',
+    detail: 'NumPy',
+    documentation: 'Create a NumPy array.',
+  },
+  {
+    label: 'plt.figure',
+    insertText: 'plt.figure()\n${0}',
+    detail: 'matplotlib',
+    documentation: 'Create a new figure.',
+  },
+  {
+    label: 'plt.plot',
+    insertText: 'plt.plot(${1:x}, ${2:y})',
+    detail: 'matplotlib',
+    documentation: 'Plot x and y values.',
+  },
+  {
+    label: 'plt.imshow',
+    insertText: 'plt.imshow(${1:image})',
+    detail: 'matplotlib',
+    documentation: 'Display an image array.',
+  },
+  {
+    label: 'cv2.cvtColor',
+    insertText: 'cv2.cvtColor(${1:image}, cv2.COLOR_${2:RGB2GRAY})',
+    detail: 'OpenCV',
+    documentation: 'Convert image color space.',
+  },
+  {
+    label: 'cv2.GaussianBlur',
+    insertText: 'cv2.GaussianBlur(${1:image}, (${2:5}, ${2:5}), ${3:0})',
+    detail: 'OpenCV',
+    documentation: 'Blur an image.',
+  },
+];
 
 let monacoPromise: Promise<Monaco> | null = null;
 let pythonCompletionsRegistered = false;
+const customCompletionsByModel = new WeakMap<MonacoModel, PythonCompletionSpec[]>();
 
 function loadMonaco() {
   if (monacoPromise) {
@@ -121,21 +251,32 @@ function loadMonaco() {
 function createSuggestion(
   monaco: Monaco,
   range: MonacoRange,
-  label: string,
-  insertText: string,
-  detail: string,
-  documentation: string,
-  kind = monaco.languages.CompletionItemKind.Function,
+  completion: PythonCompletionSpec,
 ): MonacoCompletionItem {
   return {
-    label,
-    kind,
-    insertText,
+    label: completion.label,
+    kind: getCompletionKind(monaco, completion.kind),
+    insertText: completion.insertText,
     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-    detail,
-    documentation,
+    detail: completion.detail,
+    documentation: completion.documentation,
     range,
   };
+}
+
+function getCompletionKind(monaco: Monaco, kind: PythonCompletionKind = 'function') {
+  const kinds = monaco.languages.CompletionItemKind;
+  switch (kind) {
+    case 'keyword':
+      return kinds.Keyword;
+    case 'module':
+      return kinds.Module;
+    case 'variable':
+      return kinds.Variable;
+    case 'function':
+    default:
+      return kinds.Function;
+  }
 }
 
 function createVariableSuggestion(
@@ -194,35 +335,15 @@ function registerPythonCompletions(monaco: Monaco) {
         startColumn: word.startColumn,
         endColumn: word.endColumn,
       };
-      const keywordKind = monaco.languages.CompletionItemKind.Keyword;
-      const variableKind = monaco.languages.CompletionItemKind.Variable;
-      const moduleKind = monaco.languages.CompletionItemKind.Module;
       const localSuggestions = extractLocalPythonNames(model.getValue()).map(([name, detail]) =>
         createVariableSuggestion(monaco, range, name, detail),
       );
+      const modelCompletions = customCompletionsByModel.get(model) ?? [];
+      const configuredCompletions = [...PYTHON_COMPLETIONS, ...modelCompletions];
 
       return {
         suggestions: [
-          createSuggestion(monaco, range, 'print', 'print(${1:value})', 'Python builtin', 'Write a value to stdout.'),
-          createSuggestion(monaco, range, 'range', 'range(${1:stop})', 'Python builtin', 'Create an integer sequence.'),
-          createSuggestion(monaco, range, 'len', 'len(${1:value})', 'Python builtin', 'Return the length of a collection.'),
-          createSuggestion(monaco, range, 'enumerate', 'enumerate(${1:items})', 'Python builtin', 'Iterate with indexes.'),
-          createSuggestion(monaco, range, 'list comprehension', '[${1:item} for ${1:item} in ${2:items}]', 'Snippet', 'Create a list from an iterable.'),
-          createSuggestion(monaco, range, 'for', 'for ${1:item} in ${2:items}:\n    ${0:pass}', 'Snippet', 'Create a for loop.', keywordKind),
-          createSuggestion(monaco, range, 'if', 'if ${1:condition}:\n    ${0:pass}', 'Snippet', 'Create an if block.', keywordKind),
-          createSuggestion(monaco, range, 'try', 'try:\n    ${1:pass}\nexcept Exception as error:\n    ${0:print(error)}', 'Snippet', 'Handle Python exceptions.', keywordKind),
-          createSuggestion(monaco, range, 'import numpy', 'import numpy as np', 'Pyodide package', 'Import NumPy.', moduleKind),
-          createSuggestion(monaco, range, 'import pandas', 'import pandas as pd', 'Pyodide package', 'Import pandas.', moduleKind),
-          createSuggestion(monaco, range, 'import matplotlib', 'import matplotlib.pyplot as plt', 'Pyodide package', 'Import matplotlib pyplot.', moduleKind),
-          createSuggestion(monaco, range, 'np.linspace', 'np.linspace(${1:start}, ${2:stop}, ${3:num})', 'NumPy', 'Create evenly spaced values.'),
-          createSuggestion(monaco, range, 'np.array', 'np.array(${1:values})', 'NumPy', 'Create a NumPy array.'),
-          createSuggestion(monaco, range, 'plt.figure', 'plt.figure()\n${0}', 'matplotlib', 'Create a new figure.'),
-          createSuggestion(monaco, range, 'plt.plot', 'plt.plot(${1:x}, ${2:y})', 'matplotlib', 'Plot x and y values.'),
-          createSuggestion(monaco, range, 'plt.imshow', 'plt.imshow(${1:image})', 'matplotlib', 'Display an image array.'),
-          createSuggestion(monaco, range, 'cv2.cvtColor', 'cv2.cvtColor(${1:image}, cv2.COLOR_${2:RGB2GRAY})', 'OpenCV', 'Convert image color space.'),
-          createSuggestion(monaco, range, 'cv2.GaussianBlur', 'cv2.GaussianBlur(${1:image}, (${2:5}, ${2:5}), ${3:0})', 'OpenCV', 'Blur an image.'),
-          createSuggestion(monaco, range, 'image', 'image', 'Image Batch variable', 'Current image as a NumPy array.', variableKind),
-          createSuggestion(monaco, range, 'return image', 'image', 'Image Batch result', 'Return a processed image array.', variableKind),
+          ...configuredCompletions.map(completion => createSuggestion(monaco, range, completion)),
           ...localSuggestions,
         ],
       };
@@ -298,6 +419,11 @@ export async function createPythonMonacoEditor(
 
   if (options.onRun) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, options.onRun);
+  }
+
+  const model = editor.getModel();
+  if (model && options.completions?.length) {
+    customCompletionsByModel.set(model, options.completions);
   }
 
   const resizeObserver = new ResizeObserver(() => editor.layout());

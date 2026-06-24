@@ -5,7 +5,11 @@ import { LoadingStatus } from '../../components/LoadingStatus';
 import { Toggle } from '../../components/Toggle';
 import { ToolLayout } from '../../components/ToolLayout';
 import { loadScriptOnce } from '../../utils/loadScript';
-import { createPythonMonacoEditor, type PythonMonacoEditor } from '../../utils/monacoPython';
+import {
+  createPythonMonacoEditor,
+  type PythonCompletionSpec,
+  type PythonMonacoEditor,
+} from '../../utils/monacoPython';
 import { PYODIDE_SCRIPT_URL } from '../../utils/pyodide';
 
 type PyodideGlobals = {
@@ -38,6 +42,23 @@ type PreviewItem = {
 const DEFAULT_CODE = `# image is a NumPy array in RGB/RGBA format.
 # Return a NumPy array to render and download the processed image.
 image`;
+
+const IMAGE_BATCH_COMPLETIONS: PythonCompletionSpec[] = [
+  {
+    label: 'image',
+    insertText: 'image',
+    detail: 'Image Batch variable',
+    documentation: 'Current image as a NumPy array.',
+    kind: 'variable',
+  },
+  {
+    label: 'return image',
+    insertText: 'image',
+    detail: 'Image Batch result',
+    documentation: 'Return a processed image array.',
+    kind: 'variable',
+  },
+];
 
 export function ImageBatch() {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -280,6 +301,7 @@ else:
           value: DEFAULT_CODE,
           onRun: () => runPythonRef.current(),
           isCancelled: () => cancelled,
+          completions: IMAGE_BATCH_COMPLETIONS,
         });
         if (!editor) {
           return;

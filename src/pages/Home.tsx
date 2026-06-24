@@ -21,8 +21,15 @@ export function Home() {
               <div className="tool-button-grid">
                 {categoryTools.map(tool => (
                   <Link key={tool.id} to={tool.path} className="tool-button">
-                    <span className="tool-button__title">{tool.title}</span>
-                    <span className="tool-button__desc">{tool.description}</span>
+                    <span className="tool-button__content">
+                      <span className="tool-button__title">
+                        <span className="tool-button__icon material-symbols-rounded" aria-hidden="true">
+                          {tool.icon}
+                        </span>
+                        <span>{tool.title}</span>
+                      </span>
+                      <span className="tool-button__desc">{tool.description}</span>
+                    </span>
                   </Link>
                 ))}
               </div>

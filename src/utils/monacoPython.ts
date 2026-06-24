@@ -2,6 +2,7 @@ import { loadScriptOnce } from './loadScript';
 
 const MONACO_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min';
 const MONACO_LOADER_URL = `${MONACO_BASE}/vs/loader.min.js`;
+const COMPLETION_BASE_URL = `${import.meta.env.BASE_URL}python-completions`;
 
 type MonacoDisposable = {
   dispose: () => void;
@@ -329,7 +330,7 @@ function getMemberAccessAlias(model: MonacoModel, position: MonacoPosition) {
 
 function loadModuleCompletionManifest() {
   if (!moduleCompletionManifestPromise) {
-    moduleCompletionManifestPromise = fetch('/python-completions/manifest.json').then(response => {
+    moduleCompletionManifestPromise = fetch(`${COMPLETION_BASE_URL}/manifest.json`).then(response => {
       if (!response.ok) {
         throw new Error(`Failed to load Python completion manifest: ${response.status}`);
       }
@@ -350,7 +351,7 @@ async function loadModuleCompletions(moduleName: string) {
           return [];
         }
 
-        const response = await fetch(`/python-completions/${fileName}`);
+        const response = await fetch(`${COMPLETION_BASE_URL}/${fileName}`);
         if (!response.ok) {
           throw new Error(`Failed to load Python completions for ${moduleName}: ${response.status}`);
         }

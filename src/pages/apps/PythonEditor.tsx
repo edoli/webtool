@@ -3,19 +3,9 @@ import { Button } from '../../components/Button';
 import { FullToolLayout } from '../../components/FullToolLayout';
 import { LoadingStatus } from '../../components/LoadingStatus';
 import { loadScriptOnce } from '../../utils/loadScript';
-import { loadStyleOnce } from '../../utils/loadStyle';
+import { createPythonMonacoEditor, type PythonMonacoEditor } from '../../utils/monacoPython';
 import { PYODIDE_SCRIPT_URL } from '../../utils/pyodide';
 
-const CODEMIRROR_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5';
-
-type CodeMirrorEditor = {
-  getValue: () => string;
-  setOption: (key: string, value: unknown) => void;
-  toTextArea: () => void;
-};
-type CodeMirrorGlobal = {
-  fromTextArea: (textarea: HTMLTextAreaElement, options: Record<string, unknown>) => CodeMirrorEditor;
-};
 type PyodideGlobals = {
   clear: () => void;
   set: (key: string, value: unknown) => void;
@@ -34,13 +24,28 @@ type PyodideInstance = {
 };
 type LoadPyodide = () => Promise<PyodideInstance>;
 type WindowWithPyodide = Window & {
-  CodeMirror?: CodeMirrorGlobal;
   loadPyodide?: LoadPyodide;
 };
 
+const DEFAULT_CODE = `import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+
+print(f'x: {x}')
+print(f'y: {y}')
+
+plt.figure()
+plt.plot(x, y)
+plt.title("Sine Wave")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.grid(True)`;
+
 export function PythonEditor() {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const editorRef = useRef<CodeMirrorEditor | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<PythonMonacoEditor | null>(null);
   const pyodideRef = useRef<PyodideInstance | null>(null);
   const [status, setStatus] = useState('Loading editor...');
   const [loadingDetail, setLoadingDetail] = useState('Editor assets are loading.');
@@ -125,29 +130,20 @@ fig_count
 
     const init = async () => {
       try {
-        await loadStyleOnce(`${CODEMIRROR_BASE}/codemirror.min.css`);
-        await loadStyleOnce(`${CODEMIRROR_BASE}/theme/material-palenight.min.css`);
-        await loadScriptOnce(`${CODEMIRROR_BASE}/codemirror.min.js`);
-        await loadScriptOnce(`${CODEMIRROR_BASE}/mode/python/python.min.js`);
-        await loadScriptOnce(`${CODEMIRROR_BASE}/addon/edit/matchbrackets.min.js`);
-
-        if (cancelled) {
-          return;
-        }
-
-        const codeMirror = (window as WindowWithPyodide).CodeMirror;
-        if (textareaRef.current && codeMirror && !editorRef.current) {
-          editorRef.current = codeMirror.fromTextArea(textareaRef.current, {
-            mode: 'python',
-            lineNumbers: true,
-            matchBrackets: true,
-            indentUnit: 4,
-            theme: 'material-palenight',
+        if (editorContainerRef.current && !editorRef.current) {
+          const editor = await createPythonMonacoEditor(editorContainerRef.current, {
+            value: DEFAULT_CODE,
+            onRun: runPython,
+            isCancelled: () => cancelled,
           });
-          const editor = editorRef.current;
-          editor?.setOption('extraKeys', {
-            'Ctrl-Enter': () => runPython(),
-          });
+          if (!editor) {
+            return;
+          }
+          if (cancelled) {
+            editor.dispose();
+            return;
+          }
+          editorRef.current = editor;
         }
 
         setStatus('Loading Pyodide...');
@@ -189,7 +185,7 @@ fig_count
     return () => {
       cancelled = true;
       if (editorRef.current) {
-        editorRef.current.toTextArea();
+        editorRef.current.dispose();
         editorRef.current = null;
       }
     };
@@ -203,10 +199,7 @@ fig_count
             {isInitializing ? (
               <LoadingStatus title="Python 환경 준비 중" detail={loadingDetail} overlay />
             ) : null}
-            <textarea
-              ref={textareaRef}
-              defaultValue={`import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\nprint(f'x: {x}')\nprint(f'y: {y}')\n\nplt.figure()\nplt.plot(x, y)\nplt.title("Sine Wave")\nplt.xlabel("X")\nplt.ylabel("Y")\nplt.grid(True)`}
-            />
+            <div ref={editorContainerRef} className="monaco-editor-shell" />
           </div>
           <div className="toolbar">
             <Button onClick={runPython} disabled={isInitializing}>실행 (Ctrl + Enter)</Button>

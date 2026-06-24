@@ -344,7 +344,19 @@
   min-height: 360px;
 }
 
-.python-editor .code-editor .CodeMirror {
+.monaco-editor-shell {
+  min-height: 360px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-s);
+}
+
+.code-editor--compact .monaco-editor-shell {
+  height: 360px;
+  border: 1px solid var(--color-border);
+}
+
+.python-editor .code-editor .monaco-editor-shell {
   height: 100%;
 }
 

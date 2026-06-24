@@ -5,19 +5,9 @@ import { LoadingStatus } from '../../components/LoadingStatus';
 import { Toggle } from '../../components/Toggle';
 import { ToolLayout } from '../../components/ToolLayout';
 import { loadScriptOnce } from '../../utils/loadScript';
-import { loadStyleOnce } from '../../utils/loadStyle';
+import { createPythonMonacoEditor, type PythonMonacoEditor } from '../../utils/monacoPython';
 import { PYODIDE_SCRIPT_URL } from '../../utils/pyodide';
 
-const CODEMIRROR_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5';
-
-type CodeMirrorEditor = {
-  getValue: () => string;
-  setOption: (key: string, value: unknown) => void;
-  toTextArea: () => void;
-};
-type CodeMirrorGlobal = {
-  fromTextArea: (textarea: HTMLTextAreaElement, options: Record<string, unknown>) => CodeMirrorEditor;
-};
 type PyodideGlobals = {
   clear: () => void;
   set: (key: string, value: unknown) => void;
@@ -36,7 +26,6 @@ type PyodideInstance = {
 };
 type LoadPyodide = () => Promise<PyodideInstance>;
 type WindowWithPyodide = Window & {
-  CodeMirror?: CodeMirrorGlobal;
   loadPyodide?: LoadPyodide;
 };
 
@@ -46,9 +35,13 @@ type PreviewItem = {
   url: string;
 };
 
+const DEFAULT_CODE = `# image is a NumPy array in RGB/RGBA format.
+# Return a NumPy array to render and download the processed image.
+image`;
+
 export function ImageBatch() {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const editorRef = useRef<CodeMirrorEditor | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<PythonMonacoEditor | null>(null);
   const pyodideRef = useRef<PyodideInstance | null>(null);
   const runPythonRef = useRef<() => void>(() => { });
   const [files, setFiles] = useState<File[]>([]);
@@ -282,29 +275,20 @@ else:
     let cancelled = false;
 
     const init = async () => {
-      await loadStyleOnce(`${CODEMIRROR_BASE}/codemirror.min.css`);
-      await loadStyleOnce(`${CODEMIRROR_BASE}/theme/material-palenight.min.css`);
-      await loadScriptOnce(`${CODEMIRROR_BASE}/codemirror.min.js`);
-      await loadScriptOnce(`${CODEMIRROR_BASE}/mode/python/python.min.js`);
-      await loadScriptOnce(`${CODEMIRROR_BASE}/addon/edit/matchbrackets.min.js`);
-
-      if (cancelled) {
-        return;
-      }
-
-      const codeMirror = (window as WindowWithPyodide).CodeMirror;
-      if (textareaRef.current && codeMirror && !editorRef.current) {
-        editorRef.current = codeMirror.fromTextArea(textareaRef.current, {
-          mode: 'python',
-          lineNumbers: true,
-          matchBrackets: true,
-          indentUnit: 4,
-          theme: 'material-palenight',
+      if (editorContainerRef.current && !editorRef.current) {
+        const editor = await createPythonMonacoEditor(editorContainerRef.current, {
+          value: DEFAULT_CODE,
+          onRun: () => runPythonRef.current(),
+          isCancelled: () => cancelled,
         });
-        const editor = editorRef.current;
-        editor?.setOption('extraKeys', {
-          'Ctrl-Enter': () => runPythonRef.current(),
-        });
+        if (!editor) {
+          return;
+        }
+        if (cancelled) {
+          editor.dispose();
+          return;
+        }
+        editorRef.current = editor;
       }
 
       setStatus('Loading Python environment...');
@@ -347,7 +331,7 @@ import micropip
     return () => {
       cancelled = true;
       if (editorRef.current) {
-        editorRef.current.toTextArea();
+        editorRef.current.dispose();
         editorRef.current = null;
       }
     };
@@ -372,7 +356,9 @@ import micropip
           onFiles={handleFiles}
         />
         <div className="message-box">파이썬 코드로 이미지 처리를 할 수 있습니다. (입력 이미지: image 변수 사용)</div>
-        <textarea ref={textareaRef} defaultValue="image" />
+        <div className="code-editor code-editor--compact">
+          <div ref={editorContainerRef} className="monaco-editor-shell" />
+        </div>
         <div className="toolbar">
           <Button onClick={runPython} disabled={isInitializing}>Run Script (Ctrl+Enter)</Button>
           <span className="muted">{status}</span>

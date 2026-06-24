@@ -3,6 +3,7 @@ import { Button } from '../../components/Button';
 import { FullToolLayout } from '../../components/FullToolLayout';
 import { loadScriptOnce } from '../../utils/loadScript';
 import { loadStyleOnce } from '../../utils/loadStyle';
+import { PYODIDE_SCRIPT_URL } from '../../utils/pyodide';
 
 const CODEMIRROR_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5';
 
@@ -143,7 +144,7 @@ fig_count
         }
 
         setStatus('Loading Pyodide...');
-        await loadScriptOnce('https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js');
+        await loadScriptOnce(PYODIDE_SCRIPT_URL);
 
         if (cancelled) {
           return;

@@ -5,6 +5,7 @@ import { Toggle } from '../../components/Toggle';
 import { ToolLayout } from '../../components/ToolLayout';
 import { loadScriptOnce } from '../../utils/loadScript';
 import { loadStyleOnce } from '../../utils/loadStyle';
+import { PYODIDE_SCRIPT_URL } from '../../utils/pyodide';
 
 const CODEMIRROR_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5';
 
@@ -300,7 +301,7 @@ else:
       }
 
       setStatus('Loading Python environment...');
-      await loadScriptOnce('https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js');
+      await loadScriptOnce(PYODIDE_SCRIPT_URL);
       if (cancelled) {
         return;
       }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/Button';
 import { FullToolLayout } from '../../components/FullToolLayout';
+import { LoadingStatus } from '../../components/LoadingStatus';
 import { loadScriptOnce } from '../../utils/loadScript';
 import { loadStyleOnce } from '../../utils/loadStyle';
 import { PYODIDE_SCRIPT_URL } from '../../utils/pyodide';
@@ -20,9 +21,13 @@ type PyodideGlobals = {
   set: (key: string, value: unknown) => void;
   get: (key: string) => unknown;
 };
+type PyodideLoadOptions = {
+  messageCallback?: (message: string) => void;
+  errorCallback?: (message: string) => void;
+};
 type PyodideInstance = {
-  loadPackage: (packages: string[]) => Promise<void>;
-  loadPackagesFromImports: (code: string) => Promise<void>;
+  loadPackage: (packages: string[], options?: PyodideLoadOptions) => Promise<void>;
+  loadPackagesFromImports: (code: string, options?: PyodideLoadOptions) => Promise<void>;
   runPythonAsync: (code: string) => Promise<unknown>;
   globals: PyodideGlobals;
   FS: { readFile: (path: string, options: { encoding: 'binary' }) => Uint8Array };
@@ -38,6 +43,8 @@ export function PythonEditor() {
   const editorRef = useRef<CodeMirrorEditor | null>(null);
   const pyodideRef = useRef<PyodideInstance | null>(null);
   const [status, setStatus] = useState('Loading editor...');
+  const [loadingDetail, setLoadingDetail] = useState('Editor assets are loading.');
+  const [isInitializing, setIsInitializing] = useState(true);
   const [output, setOutput] = useState('');
   const [images, setImages] = useState<string[]>([]);
 
@@ -155,15 +162,24 @@ fig_count
           throw new Error('Pyodide failed to load.');
         }
 
+        setLoadingDetail('Starting Python runtime...');
         const pyodide = await loadPyodide();
         if (cancelled) {
           return;
         }
-        await pyodide.loadPackage(['numpy', 'matplotlib', 'pandas', 'micropip']);
+        setStatus('Loading Python packages...');
+        setLoadingDetail('Loading numpy, matplotlib, pandas, and micropip...');
+        await pyodide.loadPackage(['numpy', 'matplotlib', 'pandas', 'micropip'], {
+          messageCallback: (message: string) => setLoadingDetail(message),
+          errorCallback: (message: string) => setLoadingDetail(message),
+        });
         pyodideRef.current = pyodide;
         setStatus('Ready');
+        setIsInitializing(false);
       } catch (error) {
         setStatus('Failed to initialize editor.');
+        setLoadingDetail('Python environment failed to initialize.');
+        setIsInitializing(false);
         console.error(error);
       }
     };
@@ -184,13 +200,16 @@ fig_count
       <div className="code-layout python-editor full-tool-surface">
         <div className="code-panel code-panel--editor full-tool-surface">
           <div className="code-editor full-tool-surface">
+            {isInitializing ? (
+              <LoadingStatus title="Python 환경 준비 중" detail={loadingDetail} overlay />
+            ) : null}
             <textarea
               ref={textareaRef}
               defaultValue={`import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\nprint(f'x: {x}')\nprint(f'y: {y}')\n\nplt.figure()\nplt.plot(x, y)\nplt.title("Sine Wave")\nplt.xlabel("X")\nplt.ylabel("Y")\nplt.grid(True)`}
             />
           </div>
           <div className="toolbar">
-            <Button onClick={runPython}>실행 (Ctrl + Enter)</Button>
+            <Button onClick={runPython} disabled={isInitializing}>실행 (Ctrl + Enter)</Button>
             <span className="muted">{status}</span>
           </div>
         </div>

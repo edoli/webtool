@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/Button';
 import { DropZone } from '../../components/DropZone';
+import { LoadingStatus } from '../../components/LoadingStatus';
 import { Toggle } from '../../components/Toggle';
 import { ToolLayout } from '../../components/ToolLayout';
 import { loadScriptOnce } from '../../utils/loadScript';
@@ -22,9 +23,13 @@ type PyodideGlobals = {
   set: (key: string, value: unknown) => void;
   get: (key: string) => unknown;
 };
+type PyodideLoadOptions = {
+  messageCallback?: (message: string) => void;
+  errorCallback?: (message: string) => void;
+};
 type PyodideInstance = {
-  loadPackage: (packages: string[]) => Promise<void>;
-  loadPackagesFromImports: (code: string) => Promise<void>;
+  loadPackage: (packages: string[], options?: PyodideLoadOptions) => Promise<void>;
+  loadPackagesFromImports: (code: string, options?: PyodideLoadOptions) => Promise<void>;
   runPythonAsync: (code: string) => Promise<unknown>;
   globals: PyodideGlobals;
   FS: { readFile: (path: string, options: { encoding: 'binary' }) => Uint8Array };
@@ -48,6 +53,8 @@ export function ImageBatch() {
   const runPythonRef = useRef<() => void>(() => { });
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState('');
+  const [loadingDetail, setLoadingDetail] = useState('Editor assets are loading.');
+  const [isInitializing, setIsInitializing] = useState(true);
   const [autoDownload, setAutoDownload] = useState(false);
   const [logs, setLogs] = useState('');
   const [previews, setPreviews] = useState<PreviewItem[]>([]);
@@ -309,24 +316,33 @@ else:
       if (!loadPyodide) {
         throw new Error('Pyodide failed to load.');
       }
+      setLoadingDetail('Starting Python runtime...');
       const pyodide = await loadPyodide();
       if (cancelled) {
         return;
       }
+      setStatus('Loading Python image packages...');
+      setLoadingDetail('Loading numpy, OpenCV, and micropip...');
       await pyodide.loadPackagesFromImports(`
 import numpy as np
 import cv2
 import io
 import base64
 import micropip
-      `);
+      `, {
+        messageCallback: (message: string) => setLoadingDetail(message),
+        errorCallback: (message: string) => setLoadingDetail(message),
+      });
       pyodideRef.current = pyodide;
       setStatus('Python environment ready');
+      setIsInitializing(false);
     };
 
     init().catch(error => {
       console.error(error);
       setStatus('Failed to initialize Python.');
+      setLoadingDetail('Python environment failed to initialize.');
+      setIsInitializing(false);
     });
     return () => {
       cancelled = true;
@@ -340,6 +356,9 @@ import micropip
   return (
     <ToolLayout title="Image Batch Process" description="Run Python scripts on batches of images." badge="Converter">
       <div className="stack">
+        {isInitializing ? (
+          <LoadingStatus title="Python 이미지 처리 환경 준비 중" detail={loadingDetail} />
+        ) : null}
         <Toggle
           checked={autoDownload}
           onChange={event => setAutoDownload(event.target.checked)}
@@ -355,7 +374,7 @@ import micropip
         <div className="message-box">파이썬 코드로 이미지 처리를 할 수 있습니다. (입력 이미지: image 변수 사용)</div>
         <textarea ref={textareaRef} defaultValue="image" />
         <div className="toolbar">
-          <Button onClick={runPython}>Run Script (Ctrl+Enter)</Button>
+          <Button onClick={runPython} disabled={isInitializing}>Run Script (Ctrl+Enter)</Button>
           <span className="muted">{status}</span>
         </div>
         {files.length ? (

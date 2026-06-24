@@ -16,6 +16,7 @@ type MonacoRange = {
 
 type MonacoModel = {
   getValue: () => string;
+  getLineContent: (lineNumber: number) => string;
   getWordUntilPosition: (position: MonacoPosition) => {
     word: string;
     startColumn: number;
@@ -55,6 +56,8 @@ export type PythonCompletionSpec = {
   documentation: string;
   kind?: PythonCompletionKind;
 };
+
+type ModuleCompletionCatalog = Record<string, PythonCompletionSpec[]>;
 
 type Monaco = {
   KeyMod: {
@@ -179,48 +182,156 @@ const PYTHON_COMPLETIONS: PythonCompletionSpec[] = [
     kind: 'module',
   },
   {
-    label: 'np.linspace',
-    insertText: 'np.linspace(${1:start}, ${2:stop}, ${3:num})',
-    detail: 'NumPy',
-    documentation: 'Create evenly spaced values.',
-  },
-  {
-    label: 'np.array',
-    insertText: 'np.array(${1:values})',
-    detail: 'NumPy',
-    documentation: 'Create a NumPy array.',
-  },
-  {
-    label: 'plt.figure',
-    insertText: 'plt.figure()\n${0}',
-    detail: 'matplotlib',
-    documentation: 'Create a new figure.',
-  },
-  {
-    label: 'plt.plot',
-    insertText: 'plt.plot(${1:x}, ${2:y})',
-    detail: 'matplotlib',
-    documentation: 'Plot x and y values.',
-  },
-  {
-    label: 'plt.imshow',
-    insertText: 'plt.imshow(${1:image})',
-    detail: 'matplotlib',
-    documentation: 'Display an image array.',
-  },
-  {
-    label: 'cv2.cvtColor',
-    insertText: 'cv2.cvtColor(${1:image}, cv2.COLOR_${2:RGB2GRAY})',
-    detail: 'OpenCV',
-    documentation: 'Convert image color space.',
-  },
-  {
-    label: 'cv2.GaussianBlur',
-    insertText: 'cv2.GaussianBlur(${1:image}, (${2:5}, ${2:5}), ${3:0})',
-    detail: 'OpenCV',
-    documentation: 'Blur an image.',
+    label: 'import cv2',
+    insertText: 'import cv2',
+    detail: 'Pyodide package',
+    documentation: 'Import OpenCV.',
+    kind: 'module',
   },
 ];
+
+const MODULE_COMPLETIONS: ModuleCompletionCatalog = {
+  cv2: [
+    {
+      label: 'cvtColor',
+      insertText: 'cvtColor(${1:image}, {alias}.COLOR_${2:RGB2GRAY})',
+      detail: 'OpenCV',
+      documentation: 'Convert image color space.',
+    },
+    {
+      label: 'GaussianBlur',
+      insertText: 'GaussianBlur(${1:image}, (${2:5}, ${2:5}), ${3:0})',
+      detail: 'OpenCV',
+      documentation: 'Blur an image.',
+    },
+    {
+      label: 'resize',
+      insertText: 'resize(${1:image}, (${2:width}, ${3:height}))',
+      detail: 'OpenCV',
+      documentation: 'Resize an image.',
+    },
+    {
+      label: 'threshold',
+      insertText: 'threshold(${1:image}, ${2:127}, ${3:255}, {alias}.THRESH_${4:BINARY})',
+      detail: 'OpenCV',
+      documentation: 'Apply a fixed-level threshold.',
+    },
+    {
+      label: 'Canny',
+      insertText: 'Canny(${1:image}, ${2:100}, ${3:200})',
+      detail: 'OpenCV',
+      documentation: 'Detect edges using the Canny algorithm.',
+    },
+    {
+      label: 'imdecode',
+      insertText: 'imdecode(${1:buffer}, {alias}.IMREAD_UNCHANGED)',
+      detail: 'OpenCV',
+      documentation: 'Decode an image from a memory buffer.',
+    },
+    {
+      label: 'imencode',
+      insertText: 'imencode("${1:.png}", ${2:image})',
+      detail: 'OpenCV',
+      documentation: 'Encode an image into a memory buffer.',
+    },
+  ],
+  numpy: [
+    {
+      label: 'array',
+      insertText: 'array(${1:values})',
+      detail: 'NumPy',
+      documentation: 'Create a NumPy array.',
+    },
+    {
+      label: 'asarray',
+      insertText: 'asarray(${1:values})',
+      detail: 'NumPy',
+      documentation: 'Convert input to a NumPy array.',
+    },
+    {
+      label: 'linspace',
+      insertText: 'linspace(${1:start}, ${2:stop}, ${3:num})',
+      detail: 'NumPy',
+      documentation: 'Create evenly spaced values.',
+    },
+    {
+      label: 'zeros',
+      insertText: 'zeros(${1:shape}, dtype={alias}.uint8)',
+      detail: 'NumPy',
+      documentation: 'Create an array filled with zeros.',
+    },
+    {
+      label: 'ones',
+      insertText: 'ones(${1:shape}, dtype={alias}.uint8)',
+      detail: 'NumPy',
+      documentation: 'Create an array filled with ones.',
+    },
+    {
+      label: 'clip',
+      insertText: 'clip(${1:array}, ${2:0}, ${3:255})',
+      detail: 'NumPy',
+      documentation: 'Clip array values to a range.',
+    },
+  ],
+  'matplotlib.pyplot': [
+    {
+      label: 'figure',
+      insertText: 'figure()\n${0}',
+      detail: 'matplotlib',
+      documentation: 'Create a new figure.',
+    },
+    {
+      label: 'plot',
+      insertText: 'plot(${1:x}, ${2:y})',
+      detail: 'matplotlib',
+      documentation: 'Plot x and y values.',
+    },
+    {
+      label: 'imshow',
+      insertText: 'imshow(${1:image})',
+      detail: 'matplotlib',
+      documentation: 'Display an image array.',
+    },
+    {
+      label: 'title',
+      insertText: 'title("${1:title}")',
+      detail: 'matplotlib',
+      documentation: 'Set the axes title.',
+    },
+    {
+      label: 'grid',
+      insertText: 'grid(${1:True})',
+      detail: 'matplotlib',
+      documentation: 'Configure grid lines.',
+    },
+    {
+      label: 'show',
+      insertText: 'show()',
+      detail: 'matplotlib',
+      documentation: 'Display all open figures.',
+    },
+  ],
+  pandas: [
+    {
+      label: 'DataFrame',
+      insertText: 'DataFrame(${1:data})',
+      detail: 'pandas',
+      documentation: 'Create a pandas DataFrame.',
+    },
+    {
+      label: 'Series',
+      insertText: 'Series(${1:data})',
+      detail: 'pandas',
+      documentation: 'Create a pandas Series.',
+    },
+    {
+      label: 'read_csv',
+      insertText: 'read_csv(${1:path})',
+      detail: 'pandas',
+      documentation: 'Read a CSV file into a DataFrame.',
+    },
+  ],
+};
 
 let monacoPromise: Promise<Monaco> | null = null;
 let pythonCompletionsRegistered = false;
@@ -252,11 +363,12 @@ function createSuggestion(
   monaco: Monaco,
   range: MonacoRange,
   completion: PythonCompletionSpec,
+  alias?: string,
 ): MonacoCompletionItem {
   return {
     label: completion.label,
     kind: getCompletionKind(monaco, completion.kind),
-    insertText: completion.insertText,
+    insertText: alias ? completion.insertText.split('{alias}').join(alias) : completion.insertText,
     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
     detail: completion.detail,
     documentation: completion.documentation,
@@ -320,6 +432,44 @@ function extractLocalPythonNames(code: string) {
   return [...names.entries()];
 }
 
+function extractImportedModules(code: string) {
+  const aliases = new Map<string, string>();
+  const catalogModules = new Set(Object.keys(MODULE_COMPLETIONS));
+
+  for (const line of code.split(/\r?\n/)) {
+    const importMatch = /^\s*import\s+([\w.]+)(?:\s+as\s+([A-Za-z_]\w*))?/.exec(line);
+    if (importMatch) {
+      const moduleName = importMatch[1];
+      if (moduleName && catalogModules.has(moduleName)) {
+        const alias = importMatch[2] ?? moduleName;
+        aliases.set(alias, moduleName);
+      }
+      continue;
+    }
+
+    const fromImportMatch = /^\s*from\s+([\w.]+)\s+import\s+([A-Za-z_]\w*)(?:\s+as\s+([A-Za-z_]\w*))?/.exec(line);
+    if (fromImportMatch) {
+      const parentModule = fromImportMatch[1];
+      const importedName = fromImportMatch[2];
+      if (!parentModule || !importedName) {
+        continue;
+      }
+      const alias = fromImportMatch[3] ?? importedName;
+      const moduleName = `${parentModule}.${importedName}`;
+      if (catalogModules.has(moduleName)) {
+        aliases.set(alias, moduleName);
+      }
+    }
+  }
+
+  return aliases;
+}
+
+function getMemberAccessAlias(model: MonacoModel, position: MonacoPosition) {
+  const linePrefix = model.getLineContent(position.lineNumber).slice(0, Math.max(0, position.column - 1));
+  return /([A-Za-z_]\w*)\.$/.exec(linePrefix)?.[1] ?? null;
+}
+
 function registerPythonCompletions(monaco: Monaco) {
   if (pythonCompletionsRegistered) {
     return;
@@ -335,6 +485,21 @@ function registerPythonCompletions(monaco: Monaco) {
         startColumn: word.startColumn,
         endColumn: word.endColumn,
       };
+      const memberAlias = getMemberAccessAlias(model, position);
+      const importedModules = extractImportedModules(model.getValue());
+
+      if (memberAlias) {
+        const moduleName = importedModules.get(memberAlias);
+        const moduleCompletions = moduleName ? MODULE_COMPLETIONS[moduleName] : undefined;
+        if (moduleCompletions) {
+          return {
+            suggestions: moduleCompletions.map(completion =>
+              createSuggestion(monaco, range, completion, memberAlias),
+            ),
+          };
+        }
+      }
+
       const localSuggestions = extractLocalPythonNames(model.getValue()).map(([name, detail]) =>
         createVariableSuggestion(monaco, range, name, detail),
       );

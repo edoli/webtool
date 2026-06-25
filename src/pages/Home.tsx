@@ -29,29 +29,27 @@ function ToolButton({
 }) {
   return (
     <div className="tool-button-card">
-      <span className="tool-button__content">
-        <span className="tool-button__title-row">
-          <Link to={tool.path} className="tool-button__title">
+      <Link to={tool.path} className="tool-button-card__link">
+        <span className="tool-button__content">
+          <span className="tool-button__title">
             <span className="tool-button__icon material-symbols-rounded" aria-hidden="true">
               {tool.icon}
             </span>
             <span>{tool.title}</span>
-          </Link>
-          <button
-            type="button"
-            className="tool-favorite-button material-symbols-rounded"
-            aria-label={isFavorite ? `${tool.title} remove from favorites` : `${tool.title} add to favorites`}
-            aria-pressed={isFavorite}
-            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            onClick={() => onToggleFavorite(tool.id)}
-          >
-            star
-          </button>
+          </span>
+          <span className="tool-button__desc">{tool.description}</span>
         </span>
-        <Link to={tool.path} className="tool-button__desc">
-          {tool.description}
-        </Link>
-      </span>
+      </Link>
+      <button
+        type="button"
+        className="tool-favorite-button material-symbols-rounded"
+        aria-label={isFavorite ? `${tool.title} remove from favorites` : `${tool.title} add to favorites`}
+        aria-pressed={isFavorite}
+        title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        onClick={() => onToggleFavorite(tool.id)}
+      >
+        star
+      </button>
     </div>
   );
 }

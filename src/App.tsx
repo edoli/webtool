@@ -1,4 +1,5 @@
-import { Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { Home } from './pages/Home';
 import { MotionPhoto } from './pages/convert/MotionPhoto';
@@ -16,9 +17,20 @@ import { Equation } from './pages/labs/Equation';
 import { PdfTool } from './pages/labs/PdfTool';
 import { NotFound } from './pages/NotFound';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AppShell>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/convert/motion-photo" element={<MotionPhoto />} />

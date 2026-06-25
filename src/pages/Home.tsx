@@ -82,7 +82,7 @@ export function Home() {
         </header>
 
         {favoriteTools.length > 0 && (
-          <section id="favorites" className="tool-section home-section">
+          <section id="favorites" className="tool-section home-section favorites-section">
             <div className="section-header">
               <h2 className="section-title">Favorites</h2>
               <span className="section-count">{favoriteTools.length}</span>

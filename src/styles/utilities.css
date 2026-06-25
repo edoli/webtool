@@ -91,6 +91,8 @@
   border-radius: var(--radius-s);
   background: #f6f8fb;
   transition: background 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .tool-button-card:hover,
@@ -101,6 +103,11 @@
 
 .tool-button-card a:hover {
   color: var(--color-secondary);
+}
+
+.favorites-section {
+  animation: favorites-enter 220ms ease-out both;
+  transform-origin: top;
 }
 
 .tool-favorite-button {
@@ -183,6 +190,18 @@
   display: block;
   font-size: 0.85rem;
   color: var(--color-muted);
+}
+
+@keyframes favorites-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
 }
 
 .hero {
@@ -337,5 +356,11 @@
 
   .home-panel {
     padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorites-section {
+    animation: none;
   }
 }

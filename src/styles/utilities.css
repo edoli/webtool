@@ -83,21 +83,50 @@
   gap: var(--space-3);
 }
 
-.tool-button {
+.tool-button-card {
   display: grid;
   gap: 6px;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-s);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius-s);
   background: #f6f8fb;
-  color: var(--color-ink);
-  text-decoration: none;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.tool-button:hover {
+.tool-button-card:hover,
+.tool-button-card:focus-within {
   background: rgba(52, 152, 219, 0.08);
   border-color: rgba(52, 152, 219, 0.4);
+}
+
+.tool-button-card a:hover {
+  color: var(--color-secondary);
+}
+
+.tool-favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin: -4px -6px -4px auto;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tool-favorite-button:hover,
+.tool-favorite-button[aria-pressed='true'] {
+  color: var(--color-tertiary);
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+.tool-favorite-button:hover {
+  background: rgba(255, 159, 28, 0.12);
 }
 
 .material-symbols-rounded {
@@ -130,15 +159,28 @@
   min-width: 0;
 }
 
+.tool-button__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 .tool-button__title {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
+.tool-button__title span:last-child {
+  min-width: 0;
+}
+
 .tool-button__desc {
+  display: block;
   font-size: 0.85rem;
   color: var(--color-muted);
 }
